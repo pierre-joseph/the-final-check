@@ -1,0 +1,93 @@
+body {
+  margin: 0%;
+  background-color: #FFFDD0;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #b49b7f;
+  height: 150px;
+  width: 100%;
+}
+
+header > span {
+  color: #FFFDD0;
+  font-family: Inter;
+  font-weight: 400;
+}
+
+header > img {
+  height: 80px;
+  width: 80px;
+}
+
+.boardElement {
+  display: grid;
+  grid-template-columns: repeat(8, auto);
+  background-color: #f9f5e9;
+  margin: auto;
+  margin-top: 50px;
+  width: 600px;
+  height: 600px;
+}
+
+.squareElement {
+  position: relative;
+  width: 75px;
+  height: 75px;
+  margin: 0;
+  padding: 0;
+}
+
+.pieceImg {
+  position: absolute;
+  width: 75px;
+  height: 75px;
+  left: 0px;
+  top: 0px
+}
+
+.lightCircle {
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  background-color: #666666;
+  opacity: 50%;
+  border-radius: 50%;
+  left: 27.5px;
+  top: 27.5px;
+}
+
+.winningMessage {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  justify-content: center;
+  align-items: center;
+  color: #f9f5e9;
+  font-size: 5rem;
+  flex-direction: column;
+}
+
+.winningMessage button {
+  font-size: 3rem;
+  background-color: #b49b7f;
+  border: 1px solid black;
+  padding: .25rem .5rem;
+  cursor: pointer;
+  color: #f9f5e9;
+  border-radius: 5px;
+}
+
+.winningMessage button:hover {
+  background-color: #f9f5e9;
+  color: #b49b7f;
+  border-color: 1px solid white;
+}
+
