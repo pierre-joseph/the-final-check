@@ -31,6 +31,7 @@ header > img {
   margin-top: 50px;
   width: 600px;
   height: 600px;
+  position: relative;
 }
 
 .squareElement {
@@ -90,4 +91,3 @@ header > img {
   color: #b49b7f;
   border-color: 1px solid white;
 }
-
