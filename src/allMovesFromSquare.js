@@ -1,4 +1,4 @@
-import { isMoveLegal } from "./updateBoard";
+import { isMoveLegal, isKingAttacked } from "./updateBoard";
 
 export function getAllMovesFromSquare(
     board,

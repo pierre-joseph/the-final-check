@@ -24,6 +24,9 @@ header > img {
 }
 
 .boardElement {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: grid;
   grid-template-columns: repeat(8, auto);
   background-color: #f9f5e9;
@@ -31,7 +34,6 @@ header > img {
   margin-top: 50px;
   width: 600px;
   height: 600px;
-  position: relative;
 }
 
 .squareElement {
@@ -90,4 +92,57 @@ header > img {
   background-color: #f9f5e9;
   color: #b49b7f;
   border-color: 1px solid white;
+}
+
+main {
+  display: flex;
+  flex-direction: row;
+}
+
+.flipElement {
+  position: absolute;
+  left: 75%;
+  top: 55%;
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  height: 75px;
+  align-items: center;
+}
+
+.flipButton {
+  width: 80px;
+  height: 40px;
+  background-color: #b49b7f;
+  border: thick solid black;
+  border-radius: 40px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.flipButton.on {
+  background-color: #FFFDD0;
+}
+
+.flipCircle {
+  width: 32px;
+  height: 32px;
+  background-color: white;
+  border: 2px solid black;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: left 0.3s ease;
+}
+
+.flipButton.on .flipCircle {
+  left: 40px;
+}
+
+.flipText {
+  font-family: Inter;
+  color: #b49b7f;
+  font-weight: 600;
 }

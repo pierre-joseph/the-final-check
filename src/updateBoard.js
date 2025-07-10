@@ -75,7 +75,7 @@ export function getNewBoard(prevBoard, startSquare, endSquare, promoteTo) {
     return newPossible;
   }
 
-  export function checkIfOver(newBoard, moves){
+  export function checkIfOver(newBoard, moves, color){
       let existsMove = false;
       let whitePieces = 0;
       let blackPieces = 0;
@@ -116,10 +116,10 @@ export function getNewBoard(prevBoard, startSquare, endSquare, promoteTo) {
           return null;
         }
       } else {
-        if (!isKingAttacked(newBoard, getOppColor(curTurn))) {
+        if (!isKingAttacked(newBoard, getOppColor(color))) {
           return "Draw";
         } else {
-          return curTurn;
+          return color;
         }
       }
     }

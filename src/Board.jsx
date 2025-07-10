@@ -3,6 +3,7 @@ import { useState } from "react";
 import Square from "./Square";
 import GameOver from "./GameOver";
 import PromoteModal from "./PromoteModal";
+import FlipBoard from './FlipBoard';
 import {
   getNewBoard,
   getOppColor,
@@ -74,6 +75,7 @@ export default function Board(props) {
   );
   const [result, setResult] = useState(null);
   const [pendingMove, setPendingMove] = useState(null);
+  const [flipBoard, setFlipBoard] = useState(false);
 
   function toggleSquareSelected(curRow, curCol) {
     const newSquare = {
@@ -110,7 +112,7 @@ export default function Board(props) {
             canEnPassant,
             canCastle
           );
-          setResult(() => checkIfOver(newBoard, moves));
+          setResult(() => checkIfOver(newBoard, moves, curTurn));
           return moves;
         });
 
@@ -138,7 +140,7 @@ export default function Board(props) {
           canEnPassant,
           canCastle
         );
-        setResult(() => checkIfOver(newBoard, moves));
+        setResult(() => checkIfOver(newBoard, moves, curTurn));
         return moves;
       });
 
@@ -176,19 +178,22 @@ export default function Board(props) {
   });
 
   return (
-    <section className="boardElement">
-      {squareElements}
+    <main>
+      <section className="boardElement">
+        {flipBoard ? squareElements.toReversed().map(rank => rank.toReversed()) :  squareElements}
+        {pendingMove && (
+          <PromoteModal
+            color={curTurn}
+            col={pendingMove.endSquare.col}
+            promoteTo={updatePromote}
+            moves={boardPossibleMoves[squareSelected.row][squareSelected.col].filter(
+              (sq) => sq.row === pendingMove.endSquare.row && sq.col === pendingMove.endSquare.col
+            )}
+          />
+        )}
+      </section>
       {result && <GameOver winner={result} restart={props.restart} />}
-      {pendingMove && (
-        <PromoteModal
-          color={curTurn}
-          col={pendingMove.endSquare.col}
-          promoteTo={updatePromote}
-          moves={boardPossibleMoves[squareSelected.row][squareSelected.col].filter(
-            (sq) => sq.row === pendingMove.endSquare.row && sq.col === pendingMove.endSquare.col
-          )}
-        />
-      )}
-    </section>
+      <FlipBoard flip={() => setFlipBoard(!flipBoard)} isOn={flipBoard}/>
+    </main>
   );
 }
