@@ -63,7 +63,10 @@ header > img {
   top: 27.5px;
 }
 
-.winningMessage {
+.winningMessage, .startGame {
+  font-family: Inter;
+  font-size: 5rem;
+  font-weight: 400;
   display: flex;
   position: fixed;
   top: 0;
@@ -74,11 +77,12 @@ header > img {
   justify-content: center;
   align-items: center;
   color: #f9f5e9;
-  font-size: 5rem;
   flex-direction: column;
 }
 
-.winningMessage button {
+.winningMessage button, .startGame button {
+  font-family: Inter;
+  font-weight: 400;
   font-size: 3rem;
   background-color: #b49b7f;
   border: 1px solid black;
@@ -86,9 +90,10 @@ header > img {
   cursor: pointer;
   color: #f9f5e9;
   border-radius: 5px;
+  margin-bottom: 5px;
 }
 
-.winningMessage button:hover {
+.winningMessage button:hover, .startGame button:hover {
   background-color: #f9f5e9;
   color: #b49b7f;
   border-color: 1px solid white;

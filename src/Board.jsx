@@ -3,7 +3,7 @@ import { useState } from "react";
 import Square from "./Square";
 import GameOver from "./GameOver";
 import PromoteModal from "./PromoteModal";
-import FlipBoard from './FlipBoard';
+import FlipBoard from "./FlipBoard";
 import {
   getNewBoard,
   getOppColor,
@@ -13,6 +13,8 @@ import {
   checkIfCanCastle,
   checkIfCanEnPassant,
 } from "./updateBoard";
+import StartGame from "./startGame";
+import randomMoves from "./AI";
 
 export default function Board(props) {
   const [board, setBoard] = useState([
@@ -76,6 +78,8 @@ export default function Board(props) {
   const [result, setResult] = useState(null);
   const [pendingMove, setPendingMove] = useState(null);
   const [flipBoard, setFlipBoard] = useState(false);
+  const [gameType, setGameType] = useState(null);
+  const [AITurn, setAITurn] = useState(null);
 
   function toggleSquareSelected(curRow, curCol) {
     const newSquare = {
@@ -85,9 +89,13 @@ export default function Board(props) {
     };
     if (
       squareSelected &&
-      boardPossibleMoves[squareSelected.row][squareSelected.col].some(
-        (sq) => sq.row === curRow && sq.col === curCol
-      )
+      boardPossibleMoves
+        .find(
+          (square) =>
+            square.curRow == squareSelected.row &&
+            square.curCol == squareSelected.col
+        )
+        .moves.some((sq) => sq.row === curRow && sq.col === curCol)
     ) {
       const promotionSquare =
         squareSelected.value.type == "p" &&
@@ -101,38 +109,41 @@ export default function Board(props) {
         return;
       }
 
-      setSquareSelected(null);
-      setCurTurn((prevTurn) => getOppColor(prevTurn));
-      setBoard((prevBoard) => {
-        const newBoard = getNewBoard(prevBoard, squareSelected, newSquare);
-        setBoardPossibleMoves(() => {
-          const moves = findAllPossibleBoardMoves(
-            newBoard,
-            getOppColor(curTurn),
-            canEnPassant,
-            canCastle
-          );
-          setResult(() => checkIfOver(newBoard, moves, curTurn));
-          return moves;
-        });
-
-        return newBoard;
-      });
-
-      setCanCastle((prev) => checkIfCanCastle(prev, squareSelected));
-      setCanEnPassant(() => checkIfCanEnPassant(squareSelected, newSquare));
-    } else if (newSquare.value && newSquare.value.color == curTurn) {
+      makeMoveHelper(squareSelected, newSquare, null);
+    } else if (boardPossibleMoves
+      .some(
+        (square) => square.curRow == curRow && square.curCol == curCol
+      )) {
       setSquareSelected(newSquare);
     }
   }
 
   function updatePromote(type) {
-    const {startSquare, endSquare} = pendingMove;
+    const { startSquare, endSquare } = pendingMove;
     setPendingMove(null);
+    makeMoveHelper(startSquare, endSquare, type);
+  }
+
+  function makeAIMove(board, possibleMoves, color) {
+    const { startSquare, endSquare } = randomMoves(board, possibleMoves, color);
+    makeMoveHelper(startSquare, endSquare, endSquare.promoteTo);
+    setAITurn(false);
+  }
+
+  if (AITurn){
+    makeAIMove(board, boardPossibleMoves, curTurn);
+  }
+
+  function makeMoveHelper(startSquare, endSquare, promoteTo) {
     setSquareSelected(null);
     setCurTurn((prevTurn) => getOppColor(prevTurn));
     setBoard((prevBoard) => {
-      const newBoard = getNewBoard(prevBoard, startSquare, endSquare, type);
+      const newBoard = getNewBoard(
+        prevBoard,
+        startSquare,
+        endSquare,
+        promoteTo
+      );
       setBoardPossibleMoves(() => {
         const moves = findAllPossibleBoardMoves(
           newBoard,
@@ -140,12 +151,19 @@ export default function Board(props) {
           canEnPassant,
           canCastle
         );
-        setResult(() => checkIfOver(newBoard, moves, curTurn));
+        setResult(() => {
+          const updatedResult = checkIfOver(newBoard, moves, curTurn);
+          if (!AITurn && gameType == "bot" && updatedResult == null) {
+            setAITurn(true);
+          }
+          return updatedResult;
+        });
         return moves;
       });
 
       return newBoard;
     });
+
     setCanCastle((prev) => checkIfCanCastle(prev, startSquare));
     setCanEnPassant(() => checkIfCanEnPassant(startSquare, endSquare));
   }
@@ -167,9 +185,13 @@ export default function Board(props) {
           handleBoardChange={toggleSquareSelected}
           isPossibleMove={
             squareSelected &&
-            boardPossibleMoves[squareSelected.row][squareSelected.col].some(
-              (sq) => sq.row === rowNum && sq.col === colNum
-            )
+            boardPossibleMoves
+              .find(
+                (square) =>
+                  square.curRow == squareSelected.row &&
+                  square.curCol == squareSelected.col
+              )
+              .moves.some((sq) => sq.row === rowNum && sq.col === colNum)
           }
           isKingAttacked={isKingAttacked}
         />
@@ -180,20 +202,36 @@ export default function Board(props) {
   return (
     <main>
       <section className="boardElement">
-        {flipBoard ? squareElements.toReversed().map(rank => rank.toReversed()) :  squareElements}
+        {flipBoard
+          ? squareElements.toReversed().map((rank) => rank.toReversed())
+          : squareElements}
         {pendingMove && (
           <PromoteModal
             color={curTurn}
             col={pendingMove.endSquare.col}
             promoteTo={updatePromote}
-            moves={boardPossibleMoves[squareSelected.row][squareSelected.col].filter(
-              (sq) => sq.row === pendingMove.endSquare.row && sq.col === pendingMove.endSquare.col
-            )}
+            moves={boardPossibleMoves
+              .find(
+                (square) =>
+                  square.curRow == squareSelected.row &&
+                  square.curCol == squareSelected.col
+              )
+              .moves.filter(
+                (sq) =>
+                  sq.row === pendingMove.endSquare.row &&
+                  sq.col === pendingMove.endSquare.col
+              )}
           />
         )}
       </section>
+
       {result && <GameOver winner={result} restart={props.restart} />}
-      <FlipBoard flip={() => setFlipBoard(!flipBoard)} isOn={flipBoard}/>
+      {gameType == null && (
+        <StartGame setGameMode={(type) => setGameType(type)} />
+      )}
+      {gameType && result == null && (
+        <FlipBoard flip={() => setFlipBoard(!flipBoard)} isOn={flipBoard} />
+      )}
     </main>
   );
 }

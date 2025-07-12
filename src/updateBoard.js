@@ -48,43 +48,31 @@ export function getNewBoard(prevBoard, startSquare, endSquare, promoteTo) {
   }
   
   export function findAllPossibleBoardMoves(board, color, canEnPassant, canCastle) {
-    let newPossible = [
-      [[], [], [], [], [], [], [], []],
-      [[], [], [], [], [], [], [], []],
-      [[], [], [], [], [], [], [], []],
-      [[], [], [], [], [], [], [], []],
-      [[], [], [], [], [], [], [], []],
-      [[], [], [], [], [], [], [], []],
-      [[], [], [], [], [], [], [], []],
-      [[], [], [], [], [], [], [], []],
-    ];
+    let possibleMoves = [];
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
         if (board[row][col] && board[row][col].color == color) {
-          newPossible[row][col] = getAllMovesFromSquare(
+          possibleMoves.push({curRow: row, curCol: col, moves: getAllMovesFromSquare(
             board,
             { value: board[row][col], row: row, col: col },
             canCastle,
             canEnPassant
           ).filter((move) => {
             return isMoveLegal(board, row, col, move.row, move.col, color, move.promoteTo);
-          });
+          })});
         }
       }
     }
-    return newPossible;
+    const filteredPossibleMoves = possibleMoves.filter((piece) => piece.moves.length != 0)
+    return filteredPossibleMoves;
   }
 
-  export function checkIfOver(newBoard, moves, color){
+  export function checkIfOver(newBoard, possibleMoves, color){
       let existsMove = false;
       let whitePieces = 0;
       let blackPieces = 0;
       for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
-          if (moves[row][col].length != 0) {
-            existsMove = true;
-          }
-
           if (
             newBoard[row][col] &&
             (newBoard[row][col].type == "p" ||
@@ -109,6 +97,13 @@ export function getNewBoard(prevBoard, startSquare, endSquare, promoteTo) {
           }
         }
       }
+
+      for (let i = 0; i < possibleMoves.length; i++) {
+        if (possibleMoves[i].moves.length != 0) {
+          existsMove = true;
+        }
+      }
+
       if (existsMove) {
         if (whitePieces < 1 && blackPieces < 1) {
           return "Draw";
