@@ -64,8 +64,8 @@ export default function Square(props) {
   function getBackgroundColor() {
     if (
       props.value != null &&
-      props.isKingAttacked(props.board, props.value.color) &&
-      props.value.type == "k"
+      props.value.type == "k" &&
+      props.isKingAttacked(props.board, props.value.color)
     ) {
       return "#E63946";
     } else if (props.isSelected) {

@@ -12,57 +12,15 @@ import {
   checkIfOver,
   checkIfCanCastle,
   checkIfCanEnPassant,
+  convertFENToBoard,
 } from "./updateBoard";
 import StartGame from "./startGame";
-import randomMoves from "./AI";
+import { randomMoves } from "./AI";
 
 export default function Board(props) {
-  const [board, setBoard] = useState([
-    [
-      { color: "black", type: "r" },
-      { color: "black", type: "n" },
-      { color: "black", type: "b" },
-      { color: "black", type: "q" },
-      { color: "black", type: "k" },
-      { color: "black", type: "b" },
-      { color: "black", type: "n" },
-      { color: "black", type: "r" },
-    ],
-    [
-      { color: "black", type: "p" },
-      { color: "black", type: "p" },
-      { color: "black", type: "p" },
-      { color: "black", type: "p" },
-      { color: "black", type: "p" },
-      { color: "black", type: "p" },
-      { color: "black", type: "p" },
-      { color: "black", type: "p" },
-    ],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [
-      { color: "white", type: "p" },
-      { color: "white", type: "p" },
-      { color: "white", type: "p" },
-      { color: "white", type: "p" },
-      { color: "white", type: "p" },
-      { color: "white", type: "p" },
-      { color: "white", type: "p" },
-      { color: "white", type: "p" },
-    ],
-    [
-      { color: "white", type: "r" },
-      { color: "white", type: "n" },
-      { color: "white", type: "b" },
-      { color: "white", type: "q" },
-      { color: "white", type: "k" },
-      { color: "white", type: "b" },
-      { color: "white", type: "n" },
-      { color: "white", type: "r" },
-    ],
-  ]);
+  const [board, setBoard] = useState(
+    convertFENToBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+  );
   const [squareSelected, setSquareSelected] = useState(null);
   const [curTurn, setCurTurn] = useState("white");
   const [canCastle, setCanCastle] = useState({
@@ -71,9 +29,8 @@ export default function Board(props) {
     blackQueenside: true,
     blackKingside: true,
   });
-  const [canEnPassant, setCanEnPassant] = useState(null);
   const [boardPossibleMoves, setBoardPossibleMoves] = useState(
-    findAllPossibleBoardMoves(board, "white", canEnPassant, canCastle)
+    findAllPossibleBoardMoves(board, "white", canCastle, null)
   );
   const [result, setResult] = useState(null);
   const [pendingMove, setPendingMove] = useState(null);
@@ -110,10 +67,11 @@ export default function Board(props) {
       }
 
       makeMoveHelper(squareSelected, newSquare, null);
-    } else if (boardPossibleMoves
-      .some(
+    } else if (
+      boardPossibleMoves.some(
         (square) => square.curRow == curRow && square.curCol == curCol
-      )) {
+      )
+    ) {
       setSquareSelected(newSquare);
     }
   }
@@ -130,42 +88,45 @@ export default function Board(props) {
     setAITurn(false);
   }
 
-  if (AITurn){
+  if (AITurn) {
     makeAIMove(board, boardPossibleMoves, curTurn);
   }
 
   function makeMoveHelper(startSquare, endSquare, promoteTo) {
     setSquareSelected(null);
     setCurTurn((prevTurn) => getOppColor(prevTurn));
-    setBoard((prevBoard) => {
-      const newBoard = getNewBoard(
-        prevBoard,
-        startSquare,
-        endSquare,
-        promoteTo
-      );
-      setBoardPossibleMoves(() => {
-        const moves = findAllPossibleBoardMoves(
-          newBoard,
-          getOppColor(curTurn),
-          canEnPassant,
-          canCastle
+    setCanCastle((prev) => {
+      const newCanCastle = checkIfCanCastle(prev, startSquare, endSquare);
+      setBoard((prevBoard) => {
+        const newBoard = getNewBoard(
+          prevBoard,
+          startSquare,
+          endSquare,
+          promoteTo
         );
-        setResult(() => {
-          const updatedResult = checkIfOver(newBoard, moves, curTurn);
-          if (!AITurn && gameType == "bot" && updatedResult == null) {
-            setAITurn(true);
-          }
-          return updatedResult;
+
+        setBoardPossibleMoves(() => {
+          const moves = findAllPossibleBoardMoves(
+            newBoard,
+            getOppColor(curTurn),
+            newCanCastle,
+            checkIfCanEnPassant(startSquare, endSquare)
+          );
+          setResult(() => {
+            const updatedResult = checkIfOver(newBoard, moves, curTurn);
+            if (!AITurn && gameType == "bot" && updatedResult == null) {
+              setAITurn(true);
+            }
+            return updatedResult;
+          });
+          return moves;
         });
-        return moves;
+
+        return newBoard;
       });
-
-      return newBoard;
+      
+      return newCanCastle;
     });
-
-    setCanCastle((prev) => checkIfCanCastle(prev, startSquare));
-    setCanEnPassant(() => checkIfCanEnPassant(startSquare, endSquare));
   }
 
   const squareElements = board.map((rank, rowNum) => {

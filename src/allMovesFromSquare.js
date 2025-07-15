@@ -1,4 +1,4 @@
-import { isMoveLegal, isKingAttacked } from "./updateBoard";
+import { isMoveLegal, isKingAttacked } from "./updateBoard.js";
 
 export function getAllMovesFromSquare(
     board,
@@ -74,6 +74,7 @@ export function getAllMovesFromSquare(
           allMoves.push({ row: row - 1, col: col + 1 });
         }
       }
+
     } else if (color == "black") {
       if (row == 1 && board[2][col] == null && board[3][col] == null) {
         allMoves.push({ row: 3, col: col });
@@ -104,7 +105,7 @@ export function getAllMovesFromSquare(
           allMoves.push({ row: row + 1, col: col - 1});
         }
       }
-  
+
       if (
         col < 7 &&
         ((board[row + 1][col + 1] && board[row + 1][col + 1].color != color) ||
@@ -120,7 +121,7 @@ export function getAllMovesFromSquare(
         }
       }
     }
-  
+
     return allMoves;
   }
   
