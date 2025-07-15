@@ -5,7 +5,7 @@ import GameOver from "./GameOver";
 import PromoteModal from "./PromoteModal";
 import FlipBoard from "./FlipBoard";
 import {
-  getNewBoard,
+  makeMove,
   getOppColor,
   findAllPossibleBoardMoves,
   isKingAttacked,
@@ -37,6 +37,7 @@ export default function Board(props) {
   const [flipBoard, setFlipBoard] = useState(false);
   const [gameType, setGameType] = useState(null);
   const [AITurn, setAITurn] = useState(null);
+  const [squaresAttacked, setSquaresAttacked] = useState({black});
 
   function toggleSquareSelected(curRow, curCol) {
     const newSquare = {
@@ -98,7 +99,7 @@ export default function Board(props) {
     setCanCastle((prev) => {
       const newCanCastle = checkIfCanCastle(prev, startSquare, endSquare);
       setBoard((prevBoard) => {
-        const newBoard = getNewBoard(
+        makeMove(
           prevBoard,
           startSquare,
           endSquare,
@@ -107,13 +108,13 @@ export default function Board(props) {
 
         setBoardPossibleMoves(() => {
           const moves = findAllPossibleBoardMoves(
-            newBoard,
+            prevBoard,
             getOppColor(curTurn),
             newCanCastle,
             checkIfCanEnPassant(startSquare, endSquare)
           );
           setResult(() => {
-            const updatedResult = checkIfOver(newBoard, moves, curTurn);
+            const updatedResult = checkIfOver(prevBoard, moves, curTurn);
             if (!AITurn && gameType == "bot" && updatedResult == null) {
               setAITurn(true);
             }
@@ -122,7 +123,7 @@ export default function Board(props) {
           return moves;
         });
 
-        return newBoard;
+        return prevBoard;
       });
       
       return newCanCastle;

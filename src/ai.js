@@ -1,10 +1,17 @@
 import {
-  getNewBoard,
+  makeMove,
+  unmakeMove,
   findAllPossibleBoardMoves,
   checkIfCanCastle,
   checkIfCanEnPassant,
-  getOppColor
+  getOppColor,
 } from "./updateBoard.js";
+
+const pawnVal = 100;
+const knightVal = 300;
+const bishopVal = 350;
+const rookVal = 500;
+const queenVal = 900;
 
 export function randomMoves(board, possibleMoves) {
   let move = null;
@@ -27,6 +34,46 @@ export function randomMoves(board, possibleMoves) {
   };
   move = { startSquare, endSquare };
   return move;
+}
+
+export function findBestMove(depth, board, color, canCastle, canEnPassant) {
+
+}
+
+function evaluateBoard(board) {
+  let whitePieces = 0;
+  let blackPieces = 0;
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if (board[row][col] && board[row][col].type != "k") {
+        let val = 0;
+        switch (props.value.type) {
+          case "p":
+            val = pawnVal;
+            break;
+          case "n":
+            val = knightVal;
+            break;
+          case "b":
+            val = bishopVal;
+            break;
+          case "r":
+            val = rookVal;
+            break;
+          case "q":
+            val = queenVal;
+            break;
+        }
+        if (board[row][col].color == "white") {
+          whitePieces += val;
+        } else {
+          blackPieces;
+        }
+      }
+    }
+  }
+
+  return whitePieces - blackPieces;
 }
 
 export function MoveGenerationTest(
@@ -59,21 +106,17 @@ export function MoveGenerationTest(
         row: move.row,
         col: move.col,
       };
-      const newBoard = getNewBoard(
-        board.map((row) => row.slice()),
-        startSquare,
-        endSquare,
-        move.promoteTo
-      );
+      makeMove(board, startSquare, endSquare, move.promoteTo);
       const newCanCastle = checkIfCanCastle(canCastle, startSquare, endSquare);
       const newCanEnpassant = checkIfCanEnPassant(startSquare, endSquare);
       numPositions += MoveGenerationTest(
         depth - 1,
-        newBoard, 
+        board,
         getOppColor(color),
         newCanCastle,
         newCanEnpassant
       );
+      unmakeMove(board, startSquare, endSquare);
     }
   }
 
@@ -81,4 +124,4 @@ export function MoveGenerationTest(
 }
 
 // Used to test MoveGenerationTest function in ai.test.js
-// module.exports = MoveGenerationTest;
+//module.exports = MoveGenerationTest;

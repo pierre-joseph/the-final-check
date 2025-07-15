@@ -1,28 +1,16 @@
 import { getAllMovesFromSquare } from "./allMovesFromSquare.js";
 
-export function getNewBoard(prevBoard, startSquare, endSquare, promoteTo) {
-  let newBoard = prevBoard;
-  newBoard[startSquare.row][startSquare.col] = null;
-  newBoard[endSquare.row][endSquare.col] = startSquare.value;
+export function makeMove(board, startSquare, endSquare, promoteTo) {
+  board[startSquare.row][startSquare.col] = null;
+  board[endSquare.row][endSquare.col] = startSquare.value;
 
-  if (startSquare.value.color == "white" && startSquare.value.type == "k") {
+  if (startSquare.value.type == "k") {
     if (startSquare.col == 4 && endSquare.col == 6) {
-      newBoard[7][5] = { color: "white", type: "r" };
-      newBoard[7][7] = null;
+      board[startSquare.row][5] = { color: startSquare.value.color, type: "r" };
+      board[startSquare.row][7] = null;
     } else if (startSquare.col == 4 && endSquare.col == 2) {
-      newBoard[7][3] = { color: "white", type: "r" };
-      newBoard[7][0] = null;
-    }
-  } else if (
-    startSquare.value.color == "black" &&
-    startSquare.value.type == "k"
-  ) {
-    if (startSquare.col == 4 && endSquare.col == 6) {
-      newBoard[0][5] = { color: "black", type: "r" };
-      newBoard[0][7] = null;
-    } else if (startSquare.col == 4 && endSquare.col == 2) {
-      newBoard[0][3] = { color: "black", type: "r" };
-      newBoard[0][0] = null;
+      board[startSquare.row][3] = { color: startSquare.value.color, type: "r" };
+      board[startSquare.row][0] = null;
     }
   }
 
@@ -31,20 +19,41 @@ export function getNewBoard(prevBoard, startSquare, endSquare, promoteTo) {
     startSquare.col != endSquare.col &&
     endSquare.value == null
   ) {
-    newBoard[startSquare.row][endSquare.col] = null;
+    board[startSquare.row][endSquare.col] = null;
   }
 
   if (
     startSquare.value.type == "p" &&
     (endSquare.row == 0 || endSquare.row == 7)
   ) {
-    newBoard[endSquare.row][endSquare.col] = {
+    board[endSquare.row][endSquare.col] = {
       color: startSquare.value.color,
       type: promoteTo,
     };
   }
+}
 
-  return newBoard;
+export function unmakeMove(board, startSquare, endSquare) {
+  board[startSquare.row][startSquare.col] = startSquare.value;
+  board[endSquare.row][endSquare.col] = endSquare.value;
+
+  if (startSquare.value.type == "k") {
+    if (startSquare.col == 4 && endSquare.col == 6) {
+      board[startSquare.row][5] = null;
+      board[startSquare.row][7] = { color: startSquare.value.color, type: "r" };
+    } else if (startSquare.col == 4 && endSquare.col == 2) {
+      board[startSquare.row][3] = null;
+      board[startSquare.row][0] = { color: startSquare.value.color, type: "r" };
+    }
+  }
+
+  if (
+    startSquare.value.type == "p" &&
+    startSquare.col != endSquare.col &&
+    endSquare.value == null
+  ) {
+    board[startSquare.row][endSquare.col] = { color: getOppColor(startSquare.value.color), type: "p" };
+  }
 }
 
 export function findAllPossibleBoardMoves(
@@ -203,14 +212,12 @@ export function isMoveLegal(
   color,
   promoteTo
 ) {
-  const simulated = board.map((row) => row.slice());
-  const simulatedNewBoard = getNewBoard(
-    simulated,
-    { value: board[fromRow][fromCol], row: fromRow, col: fromCol },
-    { value: board[toRow][toCol], row: toRow, col: toCol },
-    promoteTo
-  );
-  return !isKingAttacked(simulatedNewBoard, color);
+  const startSquare = { value: board[fromRow][fromCol], row: fromRow, col: fromCol };
+  const endSquare = { value: board[toRow][toCol], row: toRow, col: toCol };
+  makeMove(board, startSquare, endSquare, promoteTo);
+  const notAttacked = !isKingAttacked(board, color);
+  unmakeMove(board, startSquare, endSquare);
+  return notAttacked;
 }
 
 export function isKingAttacked(board, color) {
