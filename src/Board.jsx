@@ -37,7 +37,6 @@ export default function Board(props) {
   const [flipBoard, setFlipBoard] = useState(false);
   const [gameType, setGameType] = useState(null);
   const [AITurn, setAITurn] = useState(null);
-  const [squaresAttacked, setSquaresAttacked] = useState({black});
 
   function toggleSquareSelected(curRow, curCol) {
     const newSquare = {
