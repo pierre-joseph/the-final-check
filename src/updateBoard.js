@@ -307,9 +307,8 @@ export function convertFENToBoard(fen) {
         col = col + Number(char);
       } else {
         const isUpperCase = char === char.toUpperCase();
-        const color = isUpperCase ? "white" : "black";
         const type = char.toLowerCase();
-        curRank.push({ color: color, type: type });
+        curRank.push({ iswhite: isUpperCase, type: type });
         col += 1;
       }
     }

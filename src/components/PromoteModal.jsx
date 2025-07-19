@@ -1,12 +1,12 @@
-import "./index.css";
-import whiteKnight from "./assets/whiteKnight.svg";
-import whiteBishop from "./assets/whiteBishop.svg";
-import whiteRook from "./assets/whiteRook.svg";
-import whiteQueen from "./assets/whiteQueen.svg";
-import blackKnight from "./assets/blackKnight.svg";
-import blackBishop from "./assets/blackBishop.svg";
-import blackRook from "./assets/blackRook.svg";
-import blackQueen from "./assets/blackQueen.svg";
+import "../index.css";
+import whiteKnight from "../assets/whiteKnight.svg";
+import whiteBishop from "../assets/whiteBishop.svg";
+import whiteRook from "../assets/whiteRook.svg";
+import whiteQueen from "../assets/whiteQueen.svg";
+import blackKnight from "../assets/blackKnight.svg";
+import blackBishop from "../assets/blackBishop.svg";
+import blackRook from "../assets/blackRook.svg";
+import blackQueen from "../assets/blackQueen.svg";
 
 export default function PromoteModal(props) {
   function getImages() {

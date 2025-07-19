@@ -1,5 +1,5 @@
-import creamPawn from "./assets/creamPawn.png";
-import "./index.css";
+import creamPawn from "../assets/creamPawn.png";
+import "../index.css";
 
 export default function Header() {
   return (

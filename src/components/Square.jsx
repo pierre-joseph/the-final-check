@@ -1,16 +1,16 @@
-import "./index.css";
-import whitePawn from "./assets/whitePawn.svg";
-import whiteKnight from "./assets/whiteKnight.svg";
-import whiteBishop from "./assets/whiteBishop.svg";
-import whiteRook from "./assets/whiteRook.svg";
-import whiteQueen from "./assets/whiteQueen.svg";
-import whiteKing from "./assets/whiteKing.svg";
-import blackPawn from "./assets/blackPawn.svg";
-import blackKnight from "./assets/blackKnight.svg";
-import blackBishop from "./assets/blackBishop.svg";
-import blackRook from "./assets/blackRook.svg";
-import blackQueen from "./assets/blackQueen.svg";
-import blackKing from "./assets/blackKing.svg";
+import "../index.css";
+import whitePawn from "../assets/whitePawn.svg";
+import whiteKnight from "../assets/whiteKnight.svg";
+import whiteBishop from "../assets/whiteBishop.svg";
+import whiteRook from "../assets/whiteRook.svg";
+import whiteQueen from "../assets/whiteQueen.svg";
+import whiteKing from "../assets/whiteKing.svg";
+import blackPawn from "../assets/blackPawn.svg";
+import blackKnight from "../assets/blackKnight.svg";
+import blackBishop from "../assets/blackBishop.svg";
+import blackRook from "../assets/blackRook.svg";
+import blackQueen from "../assets/blackQueen.svg";
+import blackKing from "../assets/blackKing.svg";
 
 export default function Square(props) {
   function lightSquare() {
@@ -24,7 +24,7 @@ export default function Square(props) {
   }
 
   function getImage() {
-    if (props.value.color == "white") {
+    if (props.value.iswhite) {
       switch (props.value.type) {
         case "p":
           return whitePawn;
@@ -39,7 +39,7 @@ export default function Square(props) {
         case "k":
           return whiteKing;
       }
-    } else if (props.value.color == "black") {
+    } else {
       switch (props.value.type) {
         case "p":
           return blackPawn;
@@ -57,18 +57,8 @@ export default function Square(props) {
     }
   }
 
-  function handleClick() {
-    props.handleBoardChange(props.row, props.col);
-  }
-
   function getBackgroundColor() {
-    if (
-      props.value != null &&
-      props.value.type == "k" &&
-      props.isKingAttacked(props.board, props.value.color)
-    ) {
-      return "#E63946";
-    } else if (props.isSelected) {
+    if (props.isSelected) {
       return "#e6c95f";
     } else if (lightSquare()) {
       return "#f9f5e9";
@@ -84,7 +74,7 @@ export default function Square(props) {
     <section
       className="squareElement"
       style={squareStyles}
-      onClick={handleClick}
+      onClick={props.handleClick}
     >
       {props.value != null && <img className="pieceImg" src={getImage()} />}
       {props.isPossibleMove && <div className="lightCircle"></div>}
