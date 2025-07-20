@@ -7,7 +7,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #b49b7f;
+  background-color: #B58863;
   height: 150px;
   width: 100%;
 }
@@ -29,7 +29,7 @@ header > img {
   transform: translateX(-50%);
   display: grid;
   grid-template-columns: repeat(8, auto);
-  background-color: #f9f5e9;
+  background-color: #F0D9B5;
   margin: auto;
   margin-top: 50px;
   width: 600px;
@@ -76,7 +76,7 @@ header > img {
   background-color: rgba(0, 0, 0, 0.8);
   justify-content: center;
   align-items: center;
-  color: #f9f5e9;
+  color: #F0D9B5;
   flex-direction: column;
 }
 
@@ -84,18 +84,18 @@ header > img {
   font-family: Inter;
   font-weight: 400;
   font-size: 3rem;
-  background-color: #b49b7f;
+  background-color: #B58863;
   border: 1px solid black;
   padding: .25rem .5rem;
   cursor: pointer;
-  color: #f9f5e9;
+  color: #F0D9B5;
   border-radius: 5px;
   margin-bottom: 5px;
 }
 
 .winningMessage button:hover, .startGame button:hover {
-  background-color: #f9f5e9;
-  color: #b49b7f;
+  background-color: #F0D9B5;
+  color: #B58863;
   border-color: 1px solid white;
 }
 
@@ -118,7 +118,7 @@ main {
 .flipButton {
   width: 80px;
   height: 40px;
-  background-color: #b49b7f;
+  background-color: #B58863;
   border: thick solid black;
   border-radius: 40px;
   position: relative;
@@ -148,6 +148,6 @@ main {
 
 .flipText {
   font-family: Inter;
-  color: #b49b7f;
+  color: #B58863;
   font-weight: 600;
 }

@@ -19,8 +19,8 @@ typedef uint32_t Move;  // A move is a 32-bit packed value
 // Bit layout:
 // bits  0–5:   from square
 // bits  6–11:  to square
-// bits 12–14:  promotion piece (0 = none, 1 = N, 2 = B, 3 = R, 4 = Q)
-// bits 15–17:  flags (none(0), capture(1), en passant(2), castling(3), promotion(4))
+// bits 12–14:  promotion piece (0 = none, 1 = R, 2 = N, 3 = B, 4 = Q)
+// bits 15–17:  flags (none(0), capture(1), en passant(2), castling(3), promotion(4), double pawn push (5))
 
 #define MOVE_FROM(m)        ((m) & 0x3F)  
 #define MOVE_TO(m)          (((m) >> 6) & 0x3F)

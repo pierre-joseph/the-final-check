@@ -4,9 +4,10 @@ EMCC_FLAGS = \
 	-s ENVIRONMENT='web' \
 	-s SINGLE_FILE=1 \
 	-s ASSERTIONS=1 \
+	-s EXPORT_ES6=1 \
 	-s EXPORT_NAME='createModule' \
-	-s EXPORTED_FUNCTIONS='["_get_fen", "_get_bitboards", "_find_possible_board_moves", "_malloc", "_free", "_make_move"]' \
-	-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "HEAP8", "HEAPU8"]' \
+	-s EXPORTED_FUNCTIONS='["_get_fen", "_get_bitboards", "_find_possible_board_moves", "_malloc", "_free", "_make_move", "_can_enpassant", "_can_castle"]' \
+	-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "HEAP32", "HEAPU8"]' \
 	-O3
 
 $(OUT): $(SRCS)

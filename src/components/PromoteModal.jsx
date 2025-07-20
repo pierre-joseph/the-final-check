@@ -11,58 +11,64 @@ import blackQueen from "../assets/blackQueen.svg";
 export default function PromoteModal(props) {
   function getImages() {
     return props.moves.map((move) => {
-      return {type: move.promoteTo, img: getImage(move.promoteTo)}
-    })
+      return { type: move.promote, img: getImage(move.promote) };
+    });
   }
 
   function getImage(type) {
-    if (props.color == "white") {
+    if (props.isWhite) {
       switch (type) {
-        case "n":
-          return whiteKnight;
-        case "b":
-          return whiteBishop;
-        case "r":
+        case 1:
           return whiteRook;
-        case "q":
+        case 2:
+          return whiteKnight;
+        case 3:
+          return whiteBishop;
+        case 4:
           return whiteQueen;
       }
-    } else if (props.color == "black") {
+    } else {
       switch (type) {
-        case "n":
-          return blackKnight;
-        case "b":
-          return blackBishop;
-        case "r":
+        case 1:
           return blackRook;
-        case "q":
+        case 2:
+          return blackKnight;
+        case 3:
+          return blackBishop;
+        case 4:
           return blackQueen;
       }
     }
   }
-  
+
   const images = getImages();
   const imageElements = images.map((piece, idx) => {
     return (
       <section
         key={idx}
         className="squareElement"
-        style={{ backgroundColor: "#FFFFFF" }}
+        style={{
+          backgroundColor: "#FFFDD0"
+        }}
       >
-        <img className="pieceImg" src={piece.img} onClick={() => props.promoteTo(piece.type)}/>
+        <img
+          className="pieceImg"
+          src={piece.img}
+          onClick={() => props.promoteTo(piece.type)}
+        />
       </section>
     );
   });
 
-  const leftOffset = 75 * props.col
-
-
+  const leftOffset = 75 * props.col;
   return (
-    <section style={{ 
-      position: 'absolute',
-      top: props.color == "white" ? "0px" : "300px", 
-      left: `${leftOffset}px`
-    }}>
+    <section
+      style={{
+        position: "absolute",
+        top: props.isWhite ? "0px" : "300px",
+        left: `${leftOffset}px`,
+      }}
+    >
       {imageElements}
     </section>
   );

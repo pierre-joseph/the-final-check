@@ -61,9 +61,9 @@ export default function Square(props) {
     if (props.isSelected) {
       return "#e6c95f";
     } else if (lightSquare()) {
-      return "#f9f5e9";
+      return "#F0D9B5";
     } else {
-      return "#b49b7f";
+      return "#B58863";
     }
   }
 
