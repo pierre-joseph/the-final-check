@@ -6,7 +6,8 @@ EMCC_FLAGS = \
 	-s ASSERTIONS=1 \
 	-s EXPORT_ES6=1 \
 	-s EXPORT_NAME='createModule' \
-	-s EXPORTED_FUNCTIONS='["_get_fen", "_get_bitboards", "_find_possible_board_moves", "_malloc", "_free", "_make_move", "_can_enpassant", "_can_castle"]' \
+	-s EXPORTED_FUNCTIONS='["_get_fen", "_get_bitboards", "_find_possible_board_moves", "_malloc", \
+	 "_free", "_make_react_move", "_can_enpassant", "_can_castle", "_start_game", _is_king_attacked, "_is_game_over"]' \
 	-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "HEAP32", "HEAPU8"]' \
 	-O3
 

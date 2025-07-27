@@ -24,22 +24,32 @@ export default function Board(props) {
     boardPossibleMoves: null,
     getPossibleMoves: null,
     flipBoard: false,
-    result: null,
+    kingAttackedFunc: null,
+    gameOverFunc: null,
+    result: 0,
     pendingMove: null,
     gameType: null,
+    startGameFunc: null,
     AITurn: null,
   });
 
   useEffect(() => {
     createModule().then((Module) => {
-      const makeMove = Module.cwrap("make_move", "string", [
-        "string",
+      const makeMove = Module.cwrap(
+        "make_react_move",
+        "string", 
+        [
         "number",
       ]);
+      const setStartGameFunc = Module.cwrap(
+        "start_game",
+        null,
+        ["string"]
+      );
       const setBoardMovesFunc = Module.cwrap(
         "find_possible_board_moves",
         "number",
-        ["string", "number", "string", "number"]
+        ["number", "string", "number"]
       );
       const setEnpassantFunc = Module.cwrap(
         "can_enpassant",
@@ -51,13 +61,16 @@ export default function Board(props) {
         "string",
         ["string", "number"]
       );
-      const newMovesPtr = setBoardMovesFunc(
-        state.fen,
-        state.isWhite,
-        state.canCastle,
-        state.canEnPassant
+      const setKingAttacked = Module.cwrap(
+        "is_king_attacked",
+        "number",
+        ["number"]
       );
-      const moves = getMovesFromC(newMovesPtr, Module);
+      const setGameOverFunc = Module.cwrap(
+        "is_game_over",
+        "number",
+        ["number"]
+      );
 
       setState((prevState) => {
         return {
@@ -65,9 +78,11 @@ export default function Board(props) {
           Module: Module,
           makeMove: makeMove,
           getPossibleMoves: setBoardMovesFunc,
-          boardPossibleMoves: moves,
           enpassantFunc: setEnpassantFunc,
-          canCastleFunc: setCanCastleFunc
+          canCastleFunc: setCanCastleFunc,
+          startGameFunc: setStartGameFunc,
+          kingAttackedFunc: setKingAttacked, 
+          gameOverFunc: setGameOverFunc
         };
       });
     });
@@ -96,12 +111,12 @@ export default function Board(props) {
 
       const {newfen, newEnpassant, newCanCastle} = makeMoveInC(curSq, 0);
       const newMovesPtr = state.getPossibleMoves(
-        newfen,
         !state.isWhite,
         state.canCastle,
         newEnpassant
       );
       const moves = getMovesFromC(newMovesPtr, state.Module);
+      const newResult = state.gameOverFunc(state.isWhite);
 
       setState((prevState) => ({
         ...prevState,
@@ -111,7 +126,8 @@ export default function Board(props) {
         isWhite: !prevState.isWhite,
         boardPossibleMoves: moves,
         canEnPassant: newEnpassant,
-        canCastle: newCanCastle
+        canCastle: newCanCastle,
+        result: newResult
       }));
     } else {
       setState((prevState) => {
@@ -124,7 +140,6 @@ export default function Board(props) {
     const to = state.pendingMove;
     const {newfen, newEnpassant, newCanCastle} = makeMoveInC(to, type);
     const newMovesPtr = state.getPossibleMoves(
-      newfen,
       !state.isWhite,
       state.canCastle,
       newEnpassant
@@ -134,6 +149,7 @@ export default function Board(props) {
       pendingMove: null
     }));
     const moves = getMovesFromC(newMovesPtr, state.Module);
+    const newResult = state.gameOverFunc(state.isWhite);
     setState((prevState) => ({
       ...prevState,
       squareSelected: null,
@@ -142,7 +158,8 @@ export default function Board(props) {
       isWhite: !prevState.isWhite,
       boardPossibleMoves: moves,
       canEnPassant: newEnpassant,
-      canCastle: newCanCastle
+      canCastle: newCanCastle,
+      result: newResult
     }));
   }
 
@@ -161,6 +178,7 @@ export default function Board(props) {
       const moveOffset = newMovesPtr + i * MOVE_SIZE;
       const move = view.getInt32(moveOffset, true);
       moves.push({
+        full_move: move,
         from: move & 0x3f,
         to: (move >> 6) & 0x3f,
         promote: (move >> 12) & 0x7,
@@ -174,16 +192,11 @@ export default function Board(props) {
     const curMove = state.boardPossibleMoves.find(
       (move) =>
         move.from === state.squareSelected &&
-        move.to === curSq)
-    const moveArr = [curMove.from, curMove.to, promoteTo, curMove.type];
-    const bytesPerElement = Int32Array.BYTES_PER_ELEMENT;
-
-    const ptr = state.Module._malloc(4 * bytesPerElement);
-    state.Module.HEAP32.set(moveArr, ptr / bytesPerElement);
-    const newfen = state.makeMove(state.fen, ptr);
-    const newEnpassant = state.enpassantFunc(ptr)
-    const newCanCastle = state.canCastleFunc(state.canCastle, ptr);
-    state.Module._free(ptr);
+        move.to === curSq &&
+        move.promote === promoteTo)
+    const newfen = state.makeMove(curMove.full_move);
+    const newEnpassant = state.enpassantFunc(curMove.full_move)
+    const newCanCastle = state.canCastleFunc(state.canCastle, curMove.full_move);
     return {newfen, newEnpassant, newCanCastle};
   }
 
@@ -205,6 +218,7 @@ export default function Board(props) {
               move.to === (7 - rowNum) * 8 + (7 - colNum)
           )
         }
+        isKingAttacked={state.kingAttackedFunc}
       />
     ))
   );
@@ -231,13 +245,22 @@ export default function Board(props) {
         <StartGame
           setGameMode={(type) =>
             setState((prevState) => {
-              return { ...prevState, gameType: type };
+              prevState.startGameFunc(state.fen);
+              const newMovesPtr = state.getPossibleMoves(
+                state.isWhite,
+                state.canCastle,
+                state.canEnPassant
+              );
+              const moves = getMovesFromC(newMovesPtr, state.Module);
+              return { ...prevState, gameType: type, boardPossibleMoves: moves };
             })
           }
         />
       )}
 
-      {state.gameType && state.result == null && (
+      {state.result != 0 && <GameOver winner={state.result} restart={props.restart} />}
+
+      {state.gameType && state.result == 0 && (
         <FlipBoard
           flip={() =>
             setState((prevState) => {

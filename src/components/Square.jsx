@@ -58,7 +58,14 @@ export default function Square(props) {
   }
 
   function getBackgroundColor() {
-    if (props.isSelected) {
+    if (
+      props.isKingAttacked &&
+      props.value != null &&
+      props.value.type == "k" &&
+      props.isKingAttacked(props.value.iswhite)
+    ) {
+      return "#E63946";
+    } else if (props.isSelected) {
       return "#e6c95f";
     } else if (lightSquare()) {
       return "#F0D9B5";

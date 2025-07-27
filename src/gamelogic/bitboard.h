@@ -4,6 +4,11 @@
 #include <stdint.h>
 
 typedef uint64_t Bitboard;
+void print_bitboard(Bitboard bb);
+
+extern Bitboard pawn_attacks[2][64];
+extern Bitboard knight_attacks[64];
+extern Bitboard king_attacks[64];
 
 typedef struct {
     char type;
@@ -14,6 +19,8 @@ typedef struct {
     Piece pieces[12];
 } Pieces;
 
+extern Pieces board_pieces;
+extern char captured_piece;
 typedef uint32_t Move;  // A move is a 32-bit packed value
 
 // Bit layout:
@@ -35,10 +42,10 @@ typedef struct {
     Move moves[MAX_MOVES];
     int count;
 } MoveList;
+extern MoveList all_moves; 
 
 #define SET_BIT(bb, sq) ((bb) |= (1ULL << (sq)))
 #define CLEAR_BIT(bb, sq) ((bb) &= ~(1ULL << (sq)))
 #define GET_BIT(bb, sq) (((bb) >> (sq)) & 1ULL)
 
-void print_bitboard(Bitboard bb);
 #endif
