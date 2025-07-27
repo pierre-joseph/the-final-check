@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 
 Bitboard pawn_attacks[2][64];
 Bitboard knight_attacks[64];
@@ -392,6 +393,7 @@ void init_king_attacks(){
 }
 
 void start_game(char* fen){
+    srand(time(0));
     board_pieces = get_bitboards(fen);
     init_pawn_attacks();
     init_knight_attacks();
