@@ -223,7 +223,9 @@ void get_king_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
         if (
         strchr(can_castle, 'K') &&
         (GET_BIT(my_pieces, 1) == 0x0ULL && GET_BIT(opp_pieces, 1) == 0x0ULL) &&
-        (GET_BIT(my_pieces, 2) == 0x0ULL && GET_BIT(opp_pieces, 2) == 0x0ULL)
+        (GET_BIT(my_pieces, 2) == 0x0ULL && GET_BIT(opp_pieces, 2) == 0x0ULL) &&
+        !is_square_attacked(3, false) &&
+        is_move_legal(MAKE_MOVE(sq, 2, 0, 0), true)
         ) {
             movelist->moves[movelist->count] = MAKE_MOVE(sq, 1, 0, 3);
             movelist->count++;
@@ -233,7 +235,10 @@ void get_king_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
         strchr(can_castle, 'Q') &&
         (GET_BIT(my_pieces, 4) == 0x0ULL && GET_BIT(opp_pieces, 4) == 0x0ULL) &&
         (GET_BIT(my_pieces, 5) == 0x0ULL && GET_BIT(opp_pieces, 5) == 0x0ULL) && 
-        (GET_BIT(my_pieces, 6) == 0x0ULL && GET_BIT(opp_pieces, 6) == 0x0ULL) 
+        (GET_BIT(my_pieces, 6) == 0x0ULL && GET_BIT(opp_pieces, 6) == 0x0ULL) && 
+        !is_square_attacked(3, false) &&
+        is_move_legal(MAKE_MOVE(sq, 4, 0, 0), true) &&
+        is_move_legal(MAKE_MOVE(sq, 5, 0, 0), true)
         ) {
             movelist->moves[movelist->count] = MAKE_MOVE(sq, 5, 0, 3);
             movelist->count++;
@@ -242,7 +247,9 @@ void get_king_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
         if (
         strchr(can_castle, 'k') &&
         (GET_BIT(my_pieces, 57) == 0x0ULL && GET_BIT(opp_pieces, 57) == 0x0ULL) &&
-        (GET_BIT(my_pieces, 58) == 0x0ULL && GET_BIT(opp_pieces, 57) == 0x0ULL)
+        (GET_BIT(my_pieces, 58) == 0x0ULL && GET_BIT(opp_pieces, 58) == 0x0ULL) &&
+        !is_square_attacked(59, true) &&
+        is_move_legal(MAKE_MOVE(sq, 58, 0, 0), false)
         ) {
             movelist->moves[movelist->count] = MAKE_MOVE(sq, 57, 0, 3);
             movelist->count++;
@@ -252,7 +259,10 @@ void get_king_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
         strchr(can_castle, 'q') &&
         (GET_BIT(my_pieces, 60) == 0x0ULL && GET_BIT(opp_pieces, 60) == 0x0ULL) &&
         (GET_BIT(my_pieces, 61) == 0x0ULL && GET_BIT(opp_pieces, 61) == 0x0ULL) && 
-        (GET_BIT(my_pieces, 62) == 0x0ULL && GET_BIT(opp_pieces, 62) == 0x0ULL) 
+        (GET_BIT(my_pieces, 62) == 0x0ULL && GET_BIT(opp_pieces, 62) == 0x0ULL) && 
+        !is_square_attacked(59, true) &&
+        is_move_legal(MAKE_MOVE(sq, 60, 0, 0), false) &&
+        is_move_legal(MAKE_MOVE(sq, 61, 0, 0), false)
         ) {
             movelist->moves[movelist->count] = MAKE_MOVE(sq, 61, 0, 3);
             movelist->count++;

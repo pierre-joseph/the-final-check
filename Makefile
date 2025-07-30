@@ -8,7 +8,7 @@ EMCC_FLAGS = \
 	-s EXPORT_NAME='createModule' \
 	-s EXPORTED_FUNCTIONS='["_get_fen", "_get_bitboards", "_find_possible_board_moves", "_malloc", \
 	 "_free", "_make_react_move", "_can_enpassant", "_can_castle", "_start_game", _is_king_attacked, "_is_game_over", "_get_random_move"]' \
-	-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "HEAP32", "HEAPU8"]' \
+	-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "HEAP32", "HEAPU8", "UTF8ToString"]' \
 	-O3
 
 $(OUT): $(SRCS)
@@ -16,3 +16,8 @@ $(OUT): $(SRCS)
 	
 clean:
 	rm -f $(OUT)
+
+test: 
+	gcc -g Unity/src/unity.c src/gamelogic/test_moves.c src/gamelogic/eval.c \
+	src/gamelogic/bitboard.c src/gamelogic/movegen.c src/gamelogic/fen.c  \
+	-o test_moves

@@ -5,7 +5,6 @@ import Square from "./Square";
 import GameOver from "./GameOver";
 import PromoteModal from "./PromoteModal";
 import FlipBoard from "./FlipBoard";
-import { convertFENToBoard } from "../updateBoard";
 import StartGame from "./StartGame";
 
 export default function Board(props) {
@@ -59,7 +58,7 @@ export default function Board(props) {
       );
       const setCanCastleFunc = Module.cwrap(
         "can_castle",
-        "string",
+        "number",
         ["string", "number"]
       );
       const setKingAttacked = Module.cwrap(
@@ -70,7 +69,7 @@ export default function Board(props) {
       const setGameOverFunc = Module.cwrap(
         "is_game_over",
         "number",
-        ["number"]
+        ["number", "number"]
       );
 
       const setAIFunc = Module.cwrap(
@@ -131,7 +130,6 @@ export default function Board(props) {
   }
 
   if (state.gameType == "bot" && state.result == 0 && state.isWhite == state.aiIsWhite){
-    console.log("hi");
     makeAIMove(); 
   }
 
@@ -147,7 +145,7 @@ export default function Board(props) {
     makeMoveHelper(move_vars.from, move_vars.to, move_vars.promote);
   }
 
-  function makeMoveInC(from, to, promoteTo) {
+  function makeMoveInC(from, to, promoteTo, mod) {
     const curMove = state.boardPossibleMoves.find(
       (move) =>
         move.from === from &&
@@ -155,7 +153,9 @@ export default function Board(props) {
         move.promote === promoteTo)
     const newfen = state.makeMove(curMove.full_move);
     const newEnpassant = state.enpassantFunc(curMove.full_move)
-    const newCanCastle = state.canCastleFunc(state.canCastle, curMove.full_move);
+    const newCanCastlePtr = state.canCastleFunc(state.canCastle, curMove.full_move);
+    const newCanCastle = mod.UTF8ToString(newCanCastlePtr);
+    mod._free(newCanCastlePtr);
     return {newfen, newEnpassant, newCanCastle};
   }
 
@@ -163,16 +163,13 @@ export default function Board(props) {
     const MAX_MOVES = 256;
     const MOVE_SIZE = 4;
 
-    const memBuffer = mod.HEAPU8.buffer;
-    const view = new DataView(memBuffer);
-
     const countOffset = newMovesPtr + MAX_MOVES * MOVE_SIZE;
-    const count = view.getInt32(countOffset, true);
-
+    const count = mod.HEAP32[countOffset >> 2];
+    
     const moves = [];
     for (let i = 0; i < count; i++) {
       const moveOffset = newMovesPtr + i * MOVE_SIZE;
-      const move = view.getInt32(moveOffset, true);
+      const move = mod.HEAP32[moveOffset >> 2];
       moves.push({
         full_move: move,
         from: move & 0x3f,
@@ -181,18 +178,19 @@ export default function Board(props) {
         type: (move >> 15) & 0x7,
       });
     }
+    mod._free(newMovesPtr);
     return moves;
   }
 
   function makeMoveHelper(from, to, promote){
-    const {newfen, newEnpassant, newCanCastle} = makeMoveInC(from, to, promote);
+    const {newfen, newEnpassant, newCanCastle} = makeMoveInC(from, to, promote, state.Module);
       const newMovesPtr = state.getPossibleMoves(
         !state.isWhite,
         state.canCastle,
         newEnpassant
       );
       const moves = getMovesFromC(newMovesPtr, state.Module);
-      const newResult = state.gameOverFunc(state.isWhite);
+      const newResult = state.gameOverFunc(state.isWhite, moves.length);
 
       setState((prevState) => ({
         ...prevState,
@@ -282,4 +280,35 @@ export default function Board(props) {
       )}
     </main>
   );
+}
+
+function convertFENToBoard(fen) {
+  const fenBoard = fen.split(" ")[0];
+  let board = [];
+  let curRank = [];
+  let col = 0;
+  let row = 0;
+
+  for (let char of fenBoard) {
+    if (char == "/") {
+      board.push(curRank);
+      curRank = [];
+      row = row + 1;
+      col = 0;
+    } else {
+      if (Number.isInteger(Number(char))) {
+        for (let i = 0; i < Number(char); i++) {
+          curRank.push(null);
+        }
+        col = col + Number(char);
+      } else {
+        const isUpperCase = char === char.toUpperCase();
+        const type = char.toLowerCase();
+        curRank.push({ iswhite: isUpperCase, type: type });
+        col += 1;
+      }
+    }
+  }
+  board.push(curRank);
+  return board;
 }

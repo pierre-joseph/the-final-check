@@ -1,6 +1,7 @@
 #include "bitboard.h"
 #include "movegen.h"
 #include "fen.h"
+#include "eval.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -13,12 +14,11 @@ Bitboard pawn_attacks[2][64];
 Bitboard knight_attacks[64];
 Bitboard king_attacks[64];
 Pieces board_pieces; 
-char captured_piece = ' ';
-MoveList all_moves; 
+MoveList cur_all_moves; 
 
 void print_bitboard(Bitboard bb) {
     for (int rank = 7; rank >= 0; rank--) {
-        for (int file = 0; file < 8; file++) {
+        for (int file = 7; file >= 0; file--) {
             int square = rank * 8 + file;
             printf("%d ", (int)((bb >> square) & 1ULL));
         }
@@ -27,8 +27,8 @@ void print_bitboard(Bitboard bb) {
     printf("\n");
 }
 
-void make_board_move(Move move){
-    captured_piece = ' ';
+char make_board_move(Move move){
+    char captured_piece = ' ';
     int from = MOVE_FROM(move);
     int to =  MOVE_TO(move);
     int promote = MOVE_PROMO(move);
@@ -39,7 +39,9 @@ void make_board_move(Move move){
         uint64_t* cur_bb = &board_pieces.pieces[i].bb;
         if (GET_BIT(*cur_bb, from) == 1ULL){
             CLEAR_BIT(*cur_bb, from); 
-            SET_BIT(*cur_bb, to);
+            if (type != 4){
+                SET_BIT(*cur_bb, to);
+            }
         } else if (GET_BIT(*cur_bb, to) == 1ULL){
             captured_piece = piece_type;
             CLEAR_BIT(*cur_bb, to); 
@@ -77,9 +79,11 @@ void make_board_move(Move move){
             SET_BIT(board_pieces.pieces[promote + 6].bb, to);
         }
     }
+    
+    return captured_piece;
 }
 
-void unmake_board_move(Move move){
+void unmake_board_move(Move move, char capture){
     int from = MOVE_FROM(move);
     int to =  MOVE_TO(move);
     int promote = MOVE_PROMO(move);
@@ -90,8 +94,10 @@ void unmake_board_move(Move move){
         uint64_t* cur_bb = &board_pieces.pieces[i].bb;
         if (GET_BIT(*cur_bb, to) == 1ULL){
             CLEAR_BIT(*cur_bb, to); 
-            SET_BIT(*cur_bb, from);
-        } else if (piece_type == captured_piece){
+            if (type != 4){
+                SET_BIT(*cur_bb, from);
+            }
+        } else if (piece_type == capture){
             SET_BIT(*cur_bb, to);
         } 
     }
@@ -120,9 +126,13 @@ void unmake_board_move(Move move){
                 SET_BIT(board_pieces.pieces[7].bb, 63);
             }
         }
+    } else if (type == 4) {
+        if (from < 32){
+            SET_BIT(board_pieces.pieces[6].bb, from);
+        } else {
+            SET_BIT(board_pieces.pieces[0].bb, from);
+        }
     }
-
-    captured_piece = ' ';
 }
 
 const char* make_react_move(Move move){
@@ -177,12 +187,12 @@ char* can_castle(char* prev, Move move){
         can_castle_vals[3] = false; 
     }
 
-    static char new_can_castle[5];
+   char* new_can_castle = malloc(5); 
     for (int i = 0; i < 4; i++){
         if (can_castle_vals[i]){
             new_can_castle[i] = can_castle_strs[i];
         } else {
-            new_can_castle[i] = ' ';
+            new_can_castle[i] = '-';
         }
     }
     new_can_castle[4] = '\0';
@@ -222,32 +232,50 @@ bool inefficient_material(){
     return true;
 }
 
-bool can_piece_attack_square(Piece cur_piece, int king_pos, char* color, int sq){
-    Bitboard white_pieces = board_pieces.pieces[0].bb | board_pieces.pieces[1].bb | board_pieces.pieces[2].bb |
-                            board_pieces.pieces[3].bb | board_pieces.pieces[4].bb | board_pieces.pieces[5].bb;
-    Bitboard black_pieces = board_pieces.pieces[6].bb | board_pieces.pieces[7].bb | board_pieces.pieces[8].bb |
-                            board_pieces.pieces[9].bb | board_pieces.pieces[10].bb | board_pieces.pieces[11].bb;
-    Bitboard my_pieces = strcmp(color, "white") == 0 ? white_pieces : black_pieces;
-    Bitboard opp_pieces = strcmp(color, "white") == 0 ? black_pieces : white_pieces;
-    MoveList moves_from_sq;
-    moves_from_sq.count = 0;
-    get_all_moves_from_square(cur_piece, my_pieces, opp_pieces, sq, "    ", -1, &moves_from_sq);
-    for (int move = 0; move < moves_from_sq.count; move++){
-        if (MOVE_TO(moves_from_sq.moves[move]) == king_pos){
-            return true;
-        }
-    }
-    return false;
+Bitboard get_white_pieces(){
+    return board_pieces.pieces[0].bb | board_pieces.pieces[1].bb | board_pieces.pieces[2].bb |
+           board_pieces.pieces[3].bb | board_pieces.pieces[4].bb | board_pieces.pieces[5].bb;
 }
 
-bool is_square_attacked(int king_pos, char* color){
+Bitboard get_black_pieces(){
+    return board_pieces.pieces[6].bb | board_pieces.pieces[7].bb | board_pieces.pieces[8].bb |
+           board_pieces.pieces[9].bb | board_pieces.pieces[10].bb | board_pieces.pieces[11].bb;
+}
+
+bool can_piece_attack_square(Piece cur_piece, int king_pos, bool white_attack, int sq){
+    char piece_type = cur_piece.type;
+    if (toupper(piece_type) == 'P'){
+        int side_idx = white_attack ? 0 : 1;
+        return (GET_BIT(pawn_attacks[side_idx][sq], king_pos) == 1ULL);
+    } else if (toupper(piece_type) == 'N'){
+        return (GET_BIT(knight_attacks[sq], king_pos) == 1ULL);
+    } else if (toupper(piece_type) == 'K'){
+        return (GET_BIT(king_attacks[sq], king_pos) == 1ULL);
+    } else {
+        Bitboard white_pieces = get_white_pieces();
+        Bitboard black_pieces = get_black_pieces();
+        Bitboard my_pieces = white_attack ? white_pieces : black_pieces;
+        Bitboard opp_pieces = white_attack ? black_pieces : white_pieces;
+        MoveList moves_from_sq;
+        moves_from_sq.count = 0;
+        get_all_moves_from_square(cur_piece, my_pieces, opp_pieces, sq, "    ", -1, &moves_from_sq);
+        for (int move = 0; move < moves_from_sq.count; move++){
+            if (MOVE_TO(moves_from_sq.moves[move]) == king_pos){
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+bool is_square_attacked(int king_pos, bool white_attack){
     for (int i = 0; i < 6; i++) {
-        int index = strcmp(color, "white") == 0 ? i : i + 6;
+        int index = white_attack ? i : i + 6;
         char given_type = board_pieces.pieces[index].type;
         uint64_t bitboard = board_pieces.pieces[index].bb;
         for (int sq = 0; sq < 64; sq++){
             if (GET_BIT(bitboard, sq) == 1ULL &&
-            can_piece_attack_square(board_pieces.pieces[index], king_pos, color, sq)){ 
+            can_piece_attack_square(board_pieces.pieces[index], king_pos, white_attack, sq)){ 
                 return true;
             }
         }  
@@ -257,20 +285,20 @@ bool is_square_attacked(int king_pos, char* color){
 
 bool is_king_attacked(bool white_turn){
     int king_pos = white_turn ? __builtin_ctzll(board_pieces.pieces[5].bb) : __builtin_ctzll(board_pieces.pieces[11].bb);
-    char* opp_color = white_turn ? "black" : "white";
-    return is_square_attacked(king_pos, opp_color);
+    bool white_attack = !white_turn;
+    return is_square_attacked(king_pos, white_attack);
 }
 
 bool is_move_legal(Move cur_move, bool white_turn){
-    make_board_move(cur_move);
+    char capture = make_board_move(cur_move);
     bool not_attacked = !is_king_attacked(white_turn);
-    unmake_board_move(cur_move);
+    unmake_board_move(cur_move, capture);
     return not_attacked;
 }
 
 // 0=not over, 1=draw, 2=white, 3=black
-int is_game_over(bool white_turn){
-    if (all_moves.count == 0) {
+int is_game_over(bool white_turn, int move_count){
+    if (move_count == 0) {
         if (is_king_attacked(!white_turn)) {
             int winner = white_turn ? 2 : 3;
             return winner;
@@ -285,11 +313,10 @@ int is_game_over(bool white_turn){
 }
 
 MoveList* find_possible_board_moves(bool white_turn, char* can_castle, int can_enpassant){
-    Bitboard white_pieces = board_pieces.pieces[0].bb | board_pieces.pieces[1].bb | board_pieces.pieces[2].bb |
-                            board_pieces.pieces[3].bb | board_pieces.pieces[4].bb | board_pieces.pieces[5].bb;
-    Bitboard black_pieces = board_pieces.pieces[6].bb | board_pieces.pieces[7].bb | board_pieces.pieces[8].bb |
-                            board_pieces.pieces[9].bb | board_pieces.pieces[10].bb | board_pieces.pieces[11].bb;
-    all_moves.count = 0;
+    Bitboard white_pieces = get_white_pieces();
+    Bitboard black_pieces = get_black_pieces();
+    MoveList* all_moves = (MoveList*) malloc(sizeof(MoveList));
+    all_moves->count = 0;
 
     for (int i = 0; i < 12; i++) {
         char given_type = board_pieces.pieces[i].type;
@@ -306,23 +333,24 @@ MoveList* find_possible_board_moves(bool white_turn, char* can_castle, int can_e
                     sq, can_castle, can_enpassant, &moves_from_sq);
                     for (int move = 0; move < moves_from_sq.count; move++){
                         if (is_move_legal(moves_from_sq.moves[move], white_turn)){
-                            all_moves.moves[all_moves.count] = moves_from_sq.moves[move];
-                            all_moves.count++;
+                            all_moves->moves[all_moves->count] = moves_from_sq.moves[move];
+                            all_moves->count++;
                         }
                     }
                 }
             }
         }
     }
-
-    return &all_moves;
+    
+    cur_all_moves = *all_moves;
+    return all_moves;
 }
 
 void init_pawn_attacks(){
     for (int sq = 0; sq < 64; sq++){
         uint64_t bit = 1ULL << sq;
         int row = floor(sq / 8);
-        int col = 7 - (sq % 8); 
+        int col = sq % 8; 
         int start = row * 8 + col;
         //white
         pawn_attacks[0][sq] = 0;
@@ -348,7 +376,7 @@ void init_knight_attacks(){
     for (int sq = 0; sq < 64; sq++){
         uint64_t bit = 1ULL << sq;
         int row = floor(sq / 8);
-        int col = 7 - (sq % 8); 
+        int col = sq % 8; 
         knight_attacks[sq] = 0;
         for (int curRow = row - 2; curRow <= row + 2; curRow++) {
             for (int curCol = col - 2; curCol <= col + 2; curCol++) {
@@ -373,7 +401,7 @@ void init_king_attacks(){
     for (int sq = 0; sq < 64; sq++){
         uint64_t bit = 1ULL << sq;
         int row = floor(sq / 8);
-        int col = 7 - (sq % 8); 
+        int col = sq % 8; 
         king_attacks[sq] = 0;
         for (int curRow = row - 1; curRow <= row + 1; curRow++) {
             for (int curCol = col - 1; curCol <= col + 1; curCol++) {

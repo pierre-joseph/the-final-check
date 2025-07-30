@@ -11,7 +11,7 @@ Pieces get_bitboards(const char* fen){
     };
 
     int sq = 63;
-    for (int i = 0; i < strlen(fen); i++){
+    for (int i = 0; i < strlen(strtok((char*) fen, " ")); i++){
         if (isalpha(fen[i])){
             for (int j = 0; j < 12; j++) {
                 if (board_pieces.pieces[j].type == fen[i]){

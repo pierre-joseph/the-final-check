@@ -2,9 +2,9 @@
 #define BITBOARD_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef uint64_t Bitboard;
-void print_bitboard(Bitboard bb);
 
 extern Bitboard pawn_attacks[2][64];
 extern Bitboard knight_attacks[64];
@@ -20,7 +20,6 @@ typedef struct {
 } Pieces;
 
 extern Pieces board_pieces;
-extern char captured_piece;
 typedef uint32_t Move;  // A move is a 32-bit packed value
 
 // Bit layout:
@@ -42,10 +41,31 @@ typedef struct {
     Move moves[MAX_MOVES];
     int count;
 } MoveList;
-extern MoveList all_moves; 
+extern MoveList cur_all_moves; 
 
 #define SET_BIT(bb, sq) ((bb) |= (1ULL << (sq)))
 #define CLEAR_BIT(bb, sq) ((bb) &= ~(1ULL << (sq)))
 #define GET_BIT(bb, sq) (((bb) >> (sq)) & 1ULL)
+
+typedef struct {
+    Pieces board_pieces;
+    bool white_turn;
+    int castling_rights;
+    int en_passant;
+} Position;
+
+#define MAX_DEPTH 512
+extern Position pos_stack[MAX_DEPTH];
+extern int stack_top;
+
+void print_bitboard(Bitboard bb);
+void start_game(char* fen);
+MoveList* find_possible_board_moves(bool white_turn, char* can_castle, int can_enpassant);
+char* can_castle(char* prev, Move move);
+int can_enpassant(Move move);
+char make_board_move(Move move);
+void unmake_board_move(Move move, char capture);
+bool is_square_attacked(int king_pos, bool white_attack);
+bool is_move_legal(Move cur_move, bool white_turn);
 
 #endif
