@@ -13,6 +13,7 @@
 Bitboard pawn_attacks[2][64];
 Bitboard knight_attacks[64];
 Bitboard king_attacks[64];
+Position global_position;
 Pieces board_pieces; 
 MoveList cur_all_moves; 
 

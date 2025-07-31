@@ -50,12 +50,23 @@ extern MoveList cur_all_moves;
 typedef struct {
     Pieces board_pieces;
     bool white_turn;
-    int castling_rights;
+    char* can_castle;
     int en_passant;
+    int halfmove_clock;         
+    int fullmove_number;  
 } Position;
+extern Position global_position;
+
+typedef struct {
+    char* can_castle;
+    int en_passant_square;
+    int halfmove_clock;
+    int captured_piece;
+    int fullmove_number;  
+} UndoInfo;
 
 #define MAX_DEPTH 512
-extern Position pos_stack[MAX_DEPTH];
+extern UndoInfo pos_stack[MAX_DEPTH];
 extern int stack_top;
 
 void print_bitboard(Bitboard bb);

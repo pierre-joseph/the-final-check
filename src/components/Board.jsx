@@ -30,54 +30,33 @@ export default function Board(props) {
     gameType: null,
     startGameFunc: null,
     aiIsWhite: false,
-    AIFunc: null
+    AIFunc: null,
   });
 
   useEffect(() => {
     createModule().then((Module) => {
-      const makeMove = Module.cwrap(
-        "make_react_move",
-        "string", 
-        [
-        "number",
-      ]);
-      const setStartGameFunc = Module.cwrap(
-        "start_game",
-        null,
-        ["string"]
-      );
+      const makeMove = Module.cwrap("make_react_move", "string", ["number"]);
+      const setStartGameFunc = Module.cwrap("start_game", null, ["string"]);
       const setBoardMovesFunc = Module.cwrap(
         "find_possible_board_moves",
         "number",
         ["number", "string", "number"]
       );
-      const setEnpassantFunc = Module.cwrap(
-        "can_enpassant",
+      const setEnpassantFunc = Module.cwrap("can_enpassant", "number", [
         "number",
-        ["number"]
-      );
-      const setCanCastleFunc = Module.cwrap(
-        "can_castle",
+      ]);
+      const setCanCastleFunc = Module.cwrap("can_castle", "number", [
+        "string",
         "number",
-        ["string", "number"]
-      );
-      const setKingAttacked = Module.cwrap(
-        "is_king_attacked",
+      ]);
+      const setKingAttacked = Module.cwrap("is_king_attacked", "number", [
         "number",
-        ["number"]
-      );
-      const setGameOverFunc = Module.cwrap(
-        "is_game_over",
+      ]);
+      const setGameOverFunc = Module.cwrap("is_game_over", "number", [
         "number",
-        ["number", "number"]
-      );
-
-      const setAIFunc = Module.cwrap(
-        "get_random_move",
         "number",
-        []
-      );
-
+      ]);
+      const setAIFunc = Module.cwrap("get_random_move", "number", []);
 
       setState((prevState) => {
         return {
@@ -88,9 +67,9 @@ export default function Board(props) {
           enpassantFunc: setEnpassantFunc,
           canCastleFunc: setCanCastleFunc,
           startGameFunc: setStartGameFunc,
-          kingAttackedFunc: setKingAttacked, 
+          kingAttackedFunc: setKingAttacked,
           gameOverFunc: setGameOverFunc,
-          AIFunc: setAIFunc
+          AIFunc: setAIFunc,
         };
       });
     });
@@ -105,14 +84,18 @@ export default function Board(props) {
       )
     ) {
       const promotionSquare =
-        state.board[7 - Math.floor(state.squareSelected / 8)][7 - (state.squareSelected % 8)] &&
-        state.board[7 - Math.floor(state.squareSelected / 8)][7 - (state.squareSelected % 8)].type == "p" &&
+        state.board[7 - Math.floor(state.squareSelected / 8)][
+          7 - (state.squareSelected % 8)
+        ] &&
+        state.board[7 - Math.floor(state.squareSelected / 8)][
+          7 - (state.squareSelected % 8)
+        ].type == "p" &&
         (row == 0 || row == 7);
 
       if (promotionSquare) {
         setState((prevState) => ({
           ...prevState,
-          pendingMove: curSq
+          pendingMove: curSq,
         }));
         return;
       }
@@ -129,34 +112,40 @@ export default function Board(props) {
     makeMoveHelper(state.squareSelected, to, type);
   }
 
-  if (state.gameType == "bot" && state.result == 0 && state.isWhite == state.aiIsWhite){
-    makeAIMove(); 
+  if (
+    state.gameType == "bot" &&
+    state.result == 0 &&
+    state.isWhite == state.aiIsWhite
+  ) {
+    makeAIMove();
   }
 
   function makeAIMove() {
-    const chosen_move = state.AIFunc(); 
+    const chosen_move = state.AIFunc();
     const move_vars = {
       full_move: chosen_move,
       from: chosen_move & 0x3f,
       to: (chosen_move >> 6) & 0x3f,
       promote: (chosen_move >> 12) & 0x7,
       type: (chosen_move >> 15) & 0x7,
-    }
+    };
     makeMoveHelper(move_vars.from, move_vars.to, move_vars.promote);
   }
 
   function makeMoveInC(from, to, promoteTo, mod) {
     const curMove = state.boardPossibleMoves.find(
       (move) =>
-        move.from === from &&
-        move.to === to &&
-        move.promote === promoteTo)
+        move.from === from && move.to === to && move.promote === promoteTo
+    );
     const newfen = state.makeMove(curMove.full_move);
-    const newEnpassant = state.enpassantFunc(curMove.full_move)
-    const newCanCastlePtr = state.canCastleFunc(state.canCastle, curMove.full_move);
+    const newEnpassant = state.enpassantFunc(curMove.full_move);
+    const newCanCastlePtr = state.canCastleFunc(
+      state.canCastle,
+      curMove.full_move
+    );
     const newCanCastle = mod.UTF8ToString(newCanCastlePtr);
     mod._free(newCanCastlePtr);
-    return {newfen, newEnpassant, newCanCastle};
+    return { newfen, newEnpassant, newCanCastle };
   }
 
   function getMovesFromC(newMovesPtr, mod) {
@@ -165,7 +154,7 @@ export default function Board(props) {
 
     const countOffset = newMovesPtr + MAX_MOVES * MOVE_SIZE;
     const count = mod.HEAP32[countOffset >> 2];
-    
+
     const moves = [];
     for (let i = 0; i < count; i++) {
       const moveOffset = newMovesPtr + i * MOVE_SIZE;
@@ -182,27 +171,32 @@ export default function Board(props) {
     return moves;
   }
 
-  function makeMoveHelper(from, to, promote){
-    const {newfen, newEnpassant, newCanCastle} = makeMoveInC(from, to, promote, state.Module);
-      const newMovesPtr = state.getPossibleMoves(
-        !state.isWhite,
-        state.canCastle,
-        newEnpassant
-      );
-      const moves = getMovesFromC(newMovesPtr, state.Module);
-      const newResult = state.gameOverFunc(state.isWhite, moves.length);
+  function makeMoveHelper(from, to, promote) {
+    const { newfen, newEnpassant, newCanCastle } = makeMoveInC(
+      from,
+      to,
+      promote,
+      state.Module
+    );
+    const newMovesPtr = state.getPossibleMoves(
+      !state.isWhite,
+      state.canCastle,
+      newEnpassant
+    );
+    const moves = getMovesFromC(newMovesPtr, state.Module);
+    const newResult = state.gameOverFunc(state.isWhite, moves.length);
 
-      setState((prevState) => ({
-        ...prevState,
-        squareSelected: null,
-        fen: newfen,
-        board: convertFENToBoard(newfen),
-        isWhite: !prevState.isWhite,
-        boardPossibleMoves: moves,
-        canEnPassant: newEnpassant,
-        canCastle: newCanCastle,
-        result: newResult
-      }));
+    setState((prevState) => ({
+      ...prevState,
+      squareSelected: null,
+      fen: newfen,
+      board: convertFENToBoard(newfen),
+      isWhite: !prevState.isWhite,
+      boardPossibleMoves: moves,
+      canEnPassant: newEnpassant,
+      canCastle: newCanCastle,
+      result: newResult,
+    }));
   }
 
   const squareElements = state.board.map((rank, rowNum) =>
@@ -239,10 +233,11 @@ export default function Board(props) {
             isWhite={state.isWhite}
             promoteTo={updatePromote}
             col={7 - (state.pendingMove % 8)}
-            moves={state.boardPossibleMoves
-              .filter(
-                (move) => move.from === state.squareSelected && move.to === state.pendingMove
-              )}
+            moves={state.boardPossibleMoves.filter(
+              (move) =>
+                move.from === state.squareSelected &&
+                move.to === state.pendingMove
+            )}
           />
         )}
       </section>
@@ -257,13 +252,19 @@ export default function Board(props) {
                 state.canEnPassant
               );
               const moves = getMovesFromC(newMovesPtr, state.Module);
-              return { ...prevState, gameType: type, boardPossibleMoves: moves};
+              return {
+                ...prevState,
+                gameType: type,
+                boardPossibleMoves: moves,
+              };
             })
           }
         />
       )}
 
-      {state.result != 0 && <GameOver winner={state.result} restart={props.restart} />}
+      {state.result != 0 && (
+        <GameOver winner={state.result} restart={props.restart} />
+      )}
 
       {state.gameType != null && state.result == 0 && (
         <FlipBoard
