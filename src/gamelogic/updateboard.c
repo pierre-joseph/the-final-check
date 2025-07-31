@@ -1,4 +1,4 @@
-#include "bitboard.h"
+#include "updateboard.h"
 #include "movegen.h"
 #include "fen.h"
 #include "eval.h"
@@ -14,8 +14,9 @@ Bitboard pawn_attacks[2][64];
 Bitboard knight_attacks[64];
 Bitboard king_attacks[64];
 Position global_position;
-Pieces board_pieces; 
 MoveList cur_all_moves; 
+UndoInfo pos_stack[MAX_DEPTH];
+int stack_top;
 
 void print_bitboard(Bitboard bb) {
     for (int rank = 7; rank >= 0; rank--) {
@@ -28,117 +29,16 @@ void print_bitboard(Bitboard bb) {
     printf("\n");
 }
 
-char make_board_move(Move move){
-    char captured_piece = ' ';
-    int from = MOVE_FROM(move);
-    int to =  MOVE_TO(move);
-    int promote = MOVE_PROMO(move);
-    int type = MOVE_FLAGS(move);
-
-    for (int i = 0; i < 12; i++){
-        char piece_type = board_pieces.pieces[i].type;
-        uint64_t* cur_bb = &board_pieces.pieces[i].bb;
-        if (GET_BIT(*cur_bb, from) == 1ULL){
-            CLEAR_BIT(*cur_bb, from); 
-            if (type != 4){
-                SET_BIT(*cur_bb, to);
-            }
-        } else if (GET_BIT(*cur_bb, to) == 1ULL){
-            captured_piece = piece_type;
-            CLEAR_BIT(*cur_bb, to); 
-        } 
-    }
-
-    if (type == 2){
-        if (to < 32){
-            CLEAR_BIT(board_pieces.pieces[0].bb, to + 8); 
-        } else {
-            CLEAR_BIT(board_pieces.pieces[6].bb, to - 8); 
-        }
-    } else if (type == 3){
-        if (from == 3){
-            if (from > to){
-                CLEAR_BIT(board_pieces.pieces[1].bb, 0); 
-                SET_BIT(board_pieces.pieces[1].bb, 2);   
-            } else {
-                CLEAR_BIT(board_pieces.pieces[1].bb, 7); 
-                SET_BIT(board_pieces.pieces[1].bb, 4);
-            }
-        } else {
-            if (from > to){
-                CLEAR_BIT(board_pieces.pieces[7].bb, 56); 
-                SET_BIT(board_pieces.pieces[7].bb, 58);   
-            } else {
-                CLEAR_BIT(board_pieces.pieces[7].bb, 63); 
-                SET_BIT(board_pieces.pieces[7].bb, 60);
-            }
-        }
-    } else if (type == 4){
-        if (to > 31){
-            SET_BIT(board_pieces.pieces[promote].bb, to);
-        } else {
-            SET_BIT(board_pieces.pieces[promote + 6].bb, to);
-        }
-    }
-    
-    return captured_piece;
+Bitboard get_white_pieces(){
+    return global_position.board_pieces.pieces[0].bb | global_position.board_pieces.pieces[1].bb | 
+           global_position.board_pieces.pieces[2].bb | global_position.board_pieces.pieces[3].bb | 
+           global_position.board_pieces.pieces[4].bb | global_position.board_pieces.pieces[5].bb;
 }
 
-void unmake_board_move(Move move, char capture){
-    int from = MOVE_FROM(move);
-    int to =  MOVE_TO(move);
-    int promote = MOVE_PROMO(move);
-    int type = MOVE_FLAGS(move);
-
-    for (int i = 0; i < 12; i++){
-        char piece_type = board_pieces.pieces[i].type;
-        uint64_t* cur_bb = &board_pieces.pieces[i].bb;
-        if (GET_BIT(*cur_bb, to) == 1ULL){
-            CLEAR_BIT(*cur_bb, to); 
-            if (type != 4){
-                SET_BIT(*cur_bb, from);
-            }
-        } else if (piece_type == capture){
-            SET_BIT(*cur_bb, to);
-        } 
-    }
-
-    if (type == 2){
-        if (to < 32){
-            SET_BIT(board_pieces.pieces[0].bb, to + 8); 
-        } else {
-            SET_BIT(board_pieces.pieces[6].bb, to - 8); 
-        }
-    } else if (type == 3) {
-        if (from == 3){
-            if (from > to){
-                CLEAR_BIT(board_pieces.pieces[1].bb, 2); 
-                SET_BIT(board_pieces.pieces[1].bb, 0);   
-            } else {
-                CLEAR_BIT(board_pieces.pieces[1].bb, 4); 
-                SET_BIT(board_pieces.pieces[1].bb, 7);
-            }
-        } else {
-            if (from > to){
-                CLEAR_BIT(board_pieces.pieces[7].bb, 58); 
-                SET_BIT(board_pieces.pieces[7].bb, 56);   
-            } else {
-                CLEAR_BIT(board_pieces.pieces[7].bb, 60); 
-                SET_BIT(board_pieces.pieces[7].bb, 63);
-            }
-        }
-    } else if (type == 4) {
-        if (from < 32){
-            SET_BIT(board_pieces.pieces[6].bb, from);
-        } else {
-            SET_BIT(board_pieces.pieces[0].bb, from);
-        }
-    }
-}
-
-const char* make_react_move(Move move){
-    make_board_move(move);
-    return get_fen(board_pieces);
+Bitboard get_black_pieces(){
+    return global_position.board_pieces.pieces[6].bb | global_position.board_pieces.pieces[7].bb | 
+           global_position.board_pieces.pieces[8].bb | global_position.board_pieces.pieces[9].bb | 
+           global_position.board_pieces.pieces[10].bb | global_position.board_pieces.pieces[11].bb;
 }
 
 int can_enpassant(Move move){
@@ -201,6 +101,44 @@ char* can_castle(char* prev, Move move){
     return new_can_castle;
 }
 
+void make_board_move(Move move){
+    UndoInfo cur_pos = {
+        .all_moves = global_position.all_moves,
+        .can_castle = global_position.can_castle,
+        .en_passant = global_position.en_passant,
+        .halfmove_clock = global_position.halfmove_clock,
+        .fullmove_number = global_position.fullmove_number,
+        .captured_piece = '-'
+    };
+    pos_stack[stack_top] = cur_pos;
+    make_move_helper(move);
+    stack_top++; 
+
+    global_position.white_turn = !global_position.white_turn;
+    global_position.can_castle = can_castle(global_position.can_castle, move);
+    global_position.en_passant = can_enpassant(move);
+    global_position.halfmove_clock += 1;
+    if (global_position.white_turn){
+        global_position.fullmove_number += 1;
+    }
+}
+
+void unmake_board_move(Move move){
+    stack_top--;
+    global_position.white_turn = !global_position.white_turn;
+    global_position.all_moves = pos_stack[stack_top].all_moves;
+    global_position.can_castle = pos_stack[stack_top].can_castle;
+    global_position.en_passant = pos_stack[stack_top].en_passant;
+    global_position.halfmove_clock = pos_stack[stack_top].halfmove_clock;
+    global_position.fullmove_number = pos_stack[stack_top].fullmove_number;
+    unmake_move_helper(move);
+}
+
+const char* make_react_move(Move move){
+    make_board_move(move);
+    return get_fen(global_position.board_pieces);
+}
+
 int countSetBits(unsigned int n) {
     int count = 0;
     while (n > 0) {
@@ -214,8 +152,8 @@ bool inefficient_material(){
     int white_pieces = 0;
     int black_pieces = 0;
     for (int i = 0; i < 5; i++){
-        Piece white = board_pieces.pieces[i];
-        Piece black = board_pieces.pieces[i + 6];
+        Piece white = global_position.board_pieces.pieces[i];
+        Piece black = global_position.board_pieces.pieces[i + 6];
         int white_bits = countSetBits(white.bb);
         int black_bits = countSetBits(black.bb);
         if (i == 2 || i == 3){
@@ -231,16 +169,6 @@ bool inefficient_material(){
         }
     }
     return true;
-}
-
-Bitboard get_white_pieces(){
-    return board_pieces.pieces[0].bb | board_pieces.pieces[1].bb | board_pieces.pieces[2].bb |
-           board_pieces.pieces[3].bb | board_pieces.pieces[4].bb | board_pieces.pieces[5].bb;
-}
-
-Bitboard get_black_pieces(){
-    return board_pieces.pieces[6].bb | board_pieces.pieces[7].bb | board_pieces.pieces[8].bb |
-           board_pieces.pieces[9].bb | board_pieces.pieces[10].bb | board_pieces.pieces[11].bb;
 }
 
 bool can_piece_attack_square(Piece cur_piece, int king_pos, bool white_attack, int sq){
@@ -272,11 +200,11 @@ bool can_piece_attack_square(Piece cur_piece, int king_pos, bool white_attack, i
 bool is_square_attacked(int king_pos, bool white_attack){
     for (int i = 0; i < 6; i++) {
         int index = white_attack ? i : i + 6;
-        char given_type = board_pieces.pieces[index].type;
-        uint64_t bitboard = board_pieces.pieces[index].bb;
+        char given_type = global_position.board_pieces.pieces[index].type;
+        uint64_t bitboard = global_position.board_pieces.pieces[index].bb;
         for (int sq = 0; sq < 64; sq++){
             if (GET_BIT(bitboard, sq) == 1ULL &&
-            can_piece_attack_square(board_pieces.pieces[index], king_pos, white_attack, sq)){ 
+            can_piece_attack_square(global_position.board_pieces.pieces[index], king_pos, white_attack, sq)){ 
                 return true;
             }
         }  
@@ -285,23 +213,24 @@ bool is_square_attacked(int king_pos, bool white_attack){
 }
 
 bool is_king_attacked(bool white_turn){
-    int king_pos = white_turn ? __builtin_ctzll(board_pieces.pieces[5].bb) : __builtin_ctzll(board_pieces.pieces[11].bb);
+    int king_pos = white_turn ? __builtin_ctzll(global_position.board_pieces.pieces[5].bb) 
+                    : __builtin_ctzll(global_position.board_pieces.pieces[11].bb);
     bool white_attack = !white_turn;
     return is_square_attacked(king_pos, white_attack);
 }
 
 bool is_move_legal(Move cur_move, bool white_turn){
-    char capture = make_board_move(cur_move);
+    make_board_move(cur_move);
     bool not_attacked = !is_king_attacked(white_turn);
-    unmake_board_move(cur_move, capture);
+    unmake_board_move(cur_move);
     return not_attacked;
 }
 
 // 0=not over, 1=draw, 2=white, 3=black
-int is_game_over(bool white_turn, int move_count){
-    if (move_count == 0) {
-        if (is_king_attacked(!white_turn)) {
-            int winner = white_turn ? 2 : 3;
+int is_game_over(){
+    if (global_position.all_moves.count == 0) {
+        if (is_king_attacked(global_position.white_turn)) {
+            int winner = !global_position.white_turn ? 2 : 3;
             return winner;
         } else {
             return 1;
@@ -313,27 +242,27 @@ int is_game_over(bool white_turn, int move_count){
     return 0; 
 }
 
-MoveList* find_possible_board_moves(bool white_turn, char* can_castle, int can_enpassant){
+MoveList* find_possible_board_moves(){
     Bitboard white_pieces = get_white_pieces();
     Bitboard black_pieces = get_black_pieces();
     MoveList* all_moves = (MoveList*) malloc(sizeof(MoveList));
     all_moves->count = 0;
 
     for (int i = 0; i < 12; i++) {
-        char given_type = board_pieces.pieces[i].type;
-        uint64_t bitboard = board_pieces.pieces[i].bb;
-        bool is_turn = (isupper(given_type) == white_turn);
+        char given_type = global_position.board_pieces.pieces[i].type;
+        uint64_t bitboard = global_position.board_pieces.pieces[i].bb;
+        bool is_turn = (isupper(given_type) == global_position.white_turn);
         if (is_turn) {
-            Bitboard my_pieces = white_turn ? white_pieces : black_pieces;
-            Bitboard opp_pieces = white_turn ? black_pieces : white_pieces;
+            Bitboard my_pieces = global_position.white_turn ? white_pieces : black_pieces;
+            Bitboard opp_pieces = global_position.white_turn ? black_pieces : white_pieces;
             for (int sq = 0; sq < 64; sq++){
                 if (GET_BIT(bitboard, sq) == 1ULL){
                     MoveList moves_from_sq;
                     moves_from_sq.count = 0;
-                    get_all_moves_from_square(board_pieces.pieces[i], my_pieces, opp_pieces, 
-                    sq, can_castle, can_enpassant, &moves_from_sq);
+                    get_all_moves_from_square(global_position.board_pieces.pieces[i], my_pieces, opp_pieces, 
+                    sq, global_position.can_castle, global_position.en_passant, &moves_from_sq);
                     for (int move = 0; move < moves_from_sq.count; move++){
-                        if (is_move_legal(moves_from_sq.moves[move], white_turn)){
+                        if (is_move_legal(moves_from_sq.moves[move], global_position.white_turn)){
                             all_moves->moves[all_moves->count] = moves_from_sq.moves[move];
                             all_moves->count++;
                         }
@@ -343,7 +272,7 @@ MoveList* find_possible_board_moves(bool white_turn, char* can_castle, int can_e
         }
     }
     
-    cur_all_moves = *all_moves;
+    global_position.all_moves = *all_moves;
     return all_moves;
 }
 
@@ -421,9 +350,16 @@ void init_king_attacks(){
     }
 }
 
-void start_game(char* fen){
+void start_game(char* fen, bool white_turn, char* can_castle){
     srand(time(0));
-    board_pieces = get_bitboards(fen);
+
+    global_position.board_pieces = get_bitboards(fen);
+    global_position.white_turn = white_turn;
+    global_position.can_castle = can_castle;
+    global_position.en_passant = -1;
+    global_position.halfmove_clock = 0;
+    global_position.fullmove_number = 0;
+
     init_pawn_attacks();
     init_knight_attacks();
     init_king_attacks();

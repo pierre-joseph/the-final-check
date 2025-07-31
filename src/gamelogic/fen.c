@@ -1,4 +1,4 @@
-#include "bitboard.h"
+#include "updateboard.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

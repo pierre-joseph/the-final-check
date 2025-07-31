@@ -16,10 +16,6 @@ export default function Board(props) {
     squareElements: null,
     squareSelected: null,
     isWhite: true,
-    canCastle: "KQkq",
-    canCastleFunc: null,
-    canEnPassant: -1,
-    enpassantFunc: null,
     boardPossibleMoves: null,
     getPossibleMoves: null,
     flipBoard: false,
@@ -30,32 +26,26 @@ export default function Board(props) {
     gameType: null,
     startGameFunc: null,
     aiIsWhite: false,
-    AIFunc: null,
+    AIFunc: null
   });
 
   useEffect(() => {
     createModule().then((Module) => {
       const makeMove = Module.cwrap("make_react_move", "string", ["number"]);
-      const setStartGameFunc = Module.cwrap("start_game", null, ["string"]);
+      const setStartGameFunc = Module.cwrap("start_game", null, [
+        "string",
+        "number",
+        "string",
+      ]);
       const setBoardMovesFunc = Module.cwrap(
         "find_possible_board_moves",
         "number",
-        ["number", "string", "number"]
+        []
       );
-      const setEnpassantFunc = Module.cwrap("can_enpassant", "number", [
-        "number",
-      ]);
-      const setCanCastleFunc = Module.cwrap("can_castle", "number", [
-        "string",
-        "number",
-      ]);
       const setKingAttacked = Module.cwrap("is_king_attacked", "number", [
         "number",
       ]);
-      const setGameOverFunc = Module.cwrap("is_game_over", "number", [
-        "number",
-        "number",
-      ]);
+      const setGameOverFunc = Module.cwrap("is_game_over", "number", []);
       const setAIFunc = Module.cwrap("get_random_move", "number", []);
 
       setState((prevState) => {
@@ -64,8 +54,6 @@ export default function Board(props) {
           Module: Module,
           makeMove: makeMove,
           getPossibleMoves: setBoardMovesFunc,
-          enpassantFunc: setEnpassantFunc,
-          canCastleFunc: setCanCastleFunc,
           startGameFunc: setStartGameFunc,
           kingAttackedFunc: setKingAttacked,
           gameOverFunc: setGameOverFunc,
@@ -138,14 +126,7 @@ export default function Board(props) {
         move.from === from && move.to === to && move.promote === promoteTo
     );
     const newfen = state.makeMove(curMove.full_move);
-    const newEnpassant = state.enpassantFunc(curMove.full_move);
-    const newCanCastlePtr = state.canCastleFunc(
-      state.canCastle,
-      curMove.full_move
-    );
-    const newCanCastle = mod.UTF8ToString(newCanCastlePtr);
-    mod._free(newCanCastlePtr);
-    return { newfen, newEnpassant, newCanCastle };
+    return newfen;
   }
 
   function getMovesFromC(newMovesPtr, mod) {
@@ -172,19 +153,15 @@ export default function Board(props) {
   }
 
   function makeMoveHelper(from, to, promote) {
-    const { newfen, newEnpassant, newCanCastle } = makeMoveInC(
+    const newfen = makeMoveInC(
       from,
       to,
       promote,
       state.Module
     );
-    const newMovesPtr = state.getPossibleMoves(
-      !state.isWhite,
-      state.canCastle,
-      newEnpassant
-    );
+    const newMovesPtr = state.getPossibleMoves();
     const moves = getMovesFromC(newMovesPtr, state.Module);
-    const newResult = state.gameOverFunc(state.isWhite, moves.length);
+    const newResult = state.gameOverFunc();
 
     setState((prevState) => ({
       ...prevState,
@@ -193,8 +170,6 @@ export default function Board(props) {
       board: convertFENToBoard(newfen),
       isWhite: !prevState.isWhite,
       boardPossibleMoves: moves,
-      canEnPassant: newEnpassant,
-      canCastle: newCanCastle,
       result: newResult,
     }));
   }
@@ -245,12 +220,12 @@ export default function Board(props) {
         <StartGame
           setGameMode={(type) =>
             setState((prevState) => {
-              prevState.startGameFunc(state.fen);
-              const newMovesPtr = state.getPossibleMoves(
+              prevState.startGameFunc(
+                state.fen,
                 state.isWhite,
-                state.canCastle,
-                state.canEnPassant
+                state.canCastle
               );
+              const newMovesPtr = state.getPossibleMoves();
               const moves = getMovesFromC(newMovesPtr, state.Module);
               return {
                 ...prevState,

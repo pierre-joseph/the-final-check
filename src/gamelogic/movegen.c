@@ -1,4 +1,4 @@
-#include "bitboard.h"
+#include "updateboard.h"
 #include "fen.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -292,5 +292,110 @@ int sq, char* can_castle, int can_enpassant, MoveList* movelist){
       case 'K':
         get_king_moves(cur_piece, my_pieces, opp_pieces, sq, can_castle, movelist);
         break;
+    }
+}
+
+void make_move_helper(Move move){
+    int from = MOVE_FROM(move);
+    int to =  MOVE_TO(move);
+    int promote = MOVE_PROMO(move);
+    int type = MOVE_FLAGS(move);
+
+    for (int i = 0; i < 12; i++){
+        char piece_type = global_position.board_pieces.pieces[i].type;
+        uint64_t* cur_bb = &global_position.board_pieces.pieces[i].bb;
+        if (GET_BIT(*cur_bb, from) == 1ULL){
+            CLEAR_BIT(*cur_bb, from); 
+            if (type != 4){
+                SET_BIT(*cur_bb, to);
+            }
+        } else if (GET_BIT(*cur_bb, to) == 1ULL){
+            pos_stack[stack_top].captured_piece = piece_type; 
+            CLEAR_BIT(*cur_bb, to); 
+        } 
+    }
+
+    if (type == 2){
+        if (to < 32){
+            CLEAR_BIT(global_position.board_pieces.pieces[0].bb, to + 8); 
+        } else {
+            CLEAR_BIT(global_position.board_pieces.pieces[6].bb, to - 8); 
+        }
+    } else if (type == 3){
+        if (from == 3){
+            if (from > to){
+                CLEAR_BIT(global_position.board_pieces.pieces[1].bb, 0); 
+                SET_BIT(global_position.board_pieces.pieces[1].bb, 2);   
+            } else {
+                CLEAR_BIT(global_position.board_pieces.pieces[1].bb, 7); 
+                SET_BIT(global_position.board_pieces.pieces[1].bb, 4);
+            }
+        } else {
+            if (from > to){
+                CLEAR_BIT(global_position.board_pieces.pieces[7].bb, 56); 
+                SET_BIT(global_position.board_pieces.pieces[7].bb, 58);   
+            } else {
+                CLEAR_BIT(global_position.board_pieces.pieces[7].bb, 63); 
+                SET_BIT(global_position.board_pieces.pieces[7].bb, 60);
+            }
+        }
+    } else if (type == 4){
+        if (to > 31){
+            SET_BIT(global_position.board_pieces.pieces[promote].bb, to);
+        } else {
+            SET_BIT(global_position.board_pieces.pieces[promote + 6].bb, to);
+        }
+    }
+}
+
+void unmake_move_helper(Move move){
+    int from = MOVE_FROM(move);
+    int to =  MOVE_TO(move);
+    int promote = MOVE_PROMO(move);
+    int type = MOVE_FLAGS(move);
+
+    for (int i = 0; i < 12; i++){
+        char piece_type = global_position.board_pieces.pieces[i].type;
+        uint64_t* cur_bb = &global_position.board_pieces.pieces[i].bb;
+        if (GET_BIT(*cur_bb, to) == 1ULL){
+            CLEAR_BIT(*cur_bb, to); 
+            if (type != 4){
+                SET_BIT(*cur_bb, from);
+            }
+        } else if (piece_type == pos_stack[stack_top].captured_piece){
+            SET_BIT(*cur_bb, to);
+        } 
+    }
+
+    if (type == 2){
+        if (to < 32){
+            SET_BIT(global_position.board_pieces.pieces[0].bb, to + 8); 
+        } else {
+            SET_BIT(global_position.board_pieces.pieces[6].bb, to - 8); 
+        }
+    } else if (type == 3) {
+        if (from == 3){
+            if (from > to){
+                CLEAR_BIT(global_position.board_pieces.pieces[1].bb, 2); 
+                SET_BIT(global_position.board_pieces.pieces[1].bb, 0);   
+            } else {
+                CLEAR_BIT(global_position.board_pieces.pieces[1].bb, 4); 
+                SET_BIT(global_position.board_pieces.pieces[1].bb, 7);
+            }
+        } else {
+            if (from > to){
+                CLEAR_BIT(global_position.board_pieces.pieces[7].bb, 58); 
+                SET_BIT(global_position.board_pieces.pieces[7].bb, 56);   
+            } else {
+                CLEAR_BIT(global_position.board_pieces.pieces[7].bb, 60); 
+                SET_BIT(global_position.board_pieces.pieces[7].bb, 63);
+            }
+        }
+    } else if (type == 4) {
+        if (from < 32){
+            SET_BIT(global_position.board_pieces.pieces[6].bb, from);
+        } else {
+            SET_BIT(global_position.board_pieces.pieces[0].bb, from);
+        }
     }
 }
