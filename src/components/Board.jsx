@@ -12,6 +12,7 @@ export default function Board(props) {
     Module: null,
     board: convertFENToBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"),
     fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
+    canCastle: "KQkq",
     makeMove: null,
     squareElements: null,
     squareSelected: null,
@@ -26,7 +27,8 @@ export default function Board(props) {
     gameType: null,
     startGameFunc: null,
     aiIsWhite: false,
-    AIFunc: null
+    AIFuncRandom: null, 
+    AIFuncBest: null
   });
 
   useEffect(() => {
@@ -46,7 +48,8 @@ export default function Board(props) {
         "number",
       ]);
       const setGameOverFunc = Module.cwrap("is_game_over", "number", []);
-      const setAIFunc = Module.cwrap("get_random_move", "number", []);
+      const setAIFuncRandom = Module.cwrap("get_random_move", "number", []);
+      const setAIFuncBest = Module.cwrap("get_best_move", "number", ["number"]);
 
       setState((prevState) => {
         return {
@@ -57,11 +60,20 @@ export default function Board(props) {
           startGameFunc: setStartGameFunc,
           kingAttackedFunc: setKingAttacked,
           gameOverFunc: setGameOverFunc,
-          AIFunc: setAIFunc,
+          AIFuncRandom: setAIFuncRandom,
+          AIFuncBest: setAIFuncBest
         };
       });
     });
   }, []);
+
+  if (
+    state.gameType == "bot" &&
+    state.result == 0 &&
+    state.isWhite == state.aiIsWhite
+  ) {
+    makeAIMove();
+  }
 
   function toggleBoard(row, col) {
     const curSq = (7 - row) * 8 + (7 - col);
@@ -98,18 +110,14 @@ export default function Board(props) {
   function updatePromote(type) {
     const to = state.pendingMove;
     makeMoveHelper(state.squareSelected, to, type);
-  }
-
-  if (
-    state.gameType == "bot" &&
-    state.result == 0 &&
-    state.isWhite == state.aiIsWhite
-  ) {
-    makeAIMove();
+    setState((prevState) => ({
+      ...prevState,
+      pendingMove: null
+    }));
   }
 
   function makeAIMove() {
-    const chosen_move = state.AIFunc();
+    const chosen_move = state.AIFuncBest(4);
     const move_vars = {
       full_move: chosen_move,
       from: chosen_move & 0x3f,
@@ -120,7 +128,7 @@ export default function Board(props) {
     makeMoveHelper(move_vars.from, move_vars.to, move_vars.promote);
   }
 
-  function makeMoveInC(from, to, promoteTo, mod) {
+  function makeMoveInC(from, to, promoteTo) {
     const curMove = state.boardPossibleMoves.find(
       (move) =>
         move.from === from && move.to === to && move.promote === promoteTo

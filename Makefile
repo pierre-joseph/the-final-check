@@ -6,7 +6,8 @@ EMCC_FLAGS = \
 	-s ASSERTIONS=1 \
 	-s EXPORT_ES6=1 \
 	-s EXPORT_NAME='createModule' \
-	-s EXPORTED_FUNCTIONS='["_find_possible_board_moves", "_malloc", \
+	-s ALLOW_MEMORY_GROWTH=1 \
+	-s EXPORTED_FUNCTIONS='["_find_possible_board_moves", "_malloc", "_get_best_move", \
 	 "_free", "_make_react_move", "_start_game", _is_king_attacked, "_is_game_over", "_get_random_move"]' \
 	-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "HEAP32", "HEAPU8", "UTF8ToString"]' \
 	-O3

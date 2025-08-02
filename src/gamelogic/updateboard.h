@@ -79,5 +79,6 @@ void make_board_move(Move move);
 void unmake_board_move(Move move);
 bool is_square_attacked(int king_pos, bool white_attack);
 bool is_move_legal(Move cur_move, bool white_turn);
+bool is_king_attacked(bool white_turn); 
 
 #endif
