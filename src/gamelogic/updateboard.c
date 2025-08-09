@@ -41,27 +41,22 @@ Bitboard get_black_pieces(){
            global_position.board_pieces.pieces[10].bb | global_position.board_pieces.pieces[11].bb;
 }
 
-int can_enpassant(Move move){
+void can_enpassant(Move move){
     int to =  MOVE_TO(move);
     int type = MOVE_FLAGS(move);
     if (type == 5 && to < 32){
-        return to - 8;
+        global_position.en_passant = to - 8;
     } else if (type == 5){
-        return to + 8;
+        global_position.en_passant = to + 8;
     } else {
-        return -1;
+        global_position.en_passant = -1;
     }
 }
 
-char* can_castle(char* prev, Move move){
+void can_castle(Move move){
     int from = MOVE_FROM(move);
     int to =  MOVE_TO(move);
-    bool white_kingside = strchr(prev, 'K') ? true : false;
-    bool white_queenside = strchr(prev, 'Q') ? true : false;
-    bool black_kingside = strchr(prev, 'k') ? true : false;
-    bool black_queenside = strchr(prev, 'q') ? true : false;
-    bool can_castle_vals[4] = {white_kingside, white_queenside, black_kingside, black_queenside};
-    char can_castle_strs[4] = {'K', 'Q', 'k', 'q'};
+    bool can_castle_vals[4] = {true, true, true, true};
     if (from == 3){
         can_castle_vals[0] = false; 
         can_castle_vals[1] = false;
@@ -88,36 +83,43 @@ char* can_castle(char* prev, Move move){
         can_castle_vals[3] = false; 
     }
 
-   char* new_can_castle = malloc(5); 
     for (int i = 0; i < 4; i++){
-        if (can_castle_vals[i]){
-            new_can_castle[i] = can_castle_strs[i];
-        } else {
-            new_can_castle[i] = '-';
+        if (!can_castle_vals[i]){
+            global_position.can_castle[i] = ' ';
         }
     }
-    new_can_castle[4] = '\0';
-
-    return new_can_castle;
 }
 
 void make_board_move(Move move){
     UndoInfo cur_pos = {
         .all_moves = global_position.all_moves,
-        .can_castle = global_position.can_castle,
         .en_passant = global_position.en_passant,
         .halfmove_clock = global_position.halfmove_clock,
         .fullmove_number = global_position.fullmove_number,
+        .moving_piece = '-',
         .captured_piece = '-'
     };
+
+    for (int i = 0; i < 5; i++){
+        cur_pos.can_castle[i] = global_position.can_castle[i];
+    }
+
     pos_stack[stack_top] = cur_pos;
     make_move_helper(move);
     stack_top++; 
 
     global_position.white_turn = !global_position.white_turn;
-    global_position.can_castle = can_castle(global_position.can_castle, move);
-    global_position.en_passant = can_enpassant(move);
-    global_position.halfmove_clock += 1;
+    can_castle(move);
+    can_enpassant(move);
+
+    if (pos_stack[stack_top - 1].captured_piece != '-' 
+        || pos_stack[stack_top - 1].moving_piece == 'P'
+        || pos_stack[stack_top - 1].moving_piece == 'p'){
+        global_position.halfmove_clock = 0;
+    } else {
+        global_position.halfmove_clock += 1;
+    }
+
     if (global_position.white_turn){
         global_position.fullmove_number += 1;
     }
@@ -127,10 +129,14 @@ void unmake_board_move(Move move){
     stack_top--;
     global_position.white_turn = !global_position.white_turn;
     global_position.all_moves = pos_stack[stack_top].all_moves;
-    global_position.can_castle = pos_stack[stack_top].can_castle;
     global_position.en_passant = pos_stack[stack_top].en_passant;
     global_position.halfmove_clock = pos_stack[stack_top].halfmove_clock;
     global_position.fullmove_number = pos_stack[stack_top].fullmove_number;
+
+    for (int i = 0; i < 5; i++){
+        global_position.can_castle[i] = pos_stack[stack_top].can_castle[i];
+    }
+
     unmake_move_helper(move);
 }
 
@@ -271,7 +277,7 @@ MoveList* find_possible_board_moves(){
             }
         }
     }
-    
+
     global_position.all_moves = *all_moves;
     return all_moves;
 }
@@ -352,13 +358,15 @@ void init_king_attacks(){
 
 void start_game(char* fen, bool white_turn, char* can_castle){
     srand(time(0));
-
     global_position.board_pieces = get_bitboards(fen);
     global_position.white_turn = white_turn;
-    global_position.can_castle = can_castle;
     global_position.en_passant = -1;
     global_position.halfmove_clock = 0;
     global_position.fullmove_number = 0;
+
+    for (int i = 0; i < 5; i++){
+        global_position.can_castle[i] = can_castle[i];
+    }
 
     init_pawn_attacks();
     init_knight_attacks();

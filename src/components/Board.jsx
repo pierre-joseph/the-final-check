@@ -28,7 +28,8 @@ export default function Board(props) {
     startGameFunc: null,
     aiIsWhite: false,
     AIFuncRandom: null, 
-    AIFuncBest: null
+    AIFuncBest: null, 
+    makingAIMove: false
   });
 
   useEffect(() => {
@@ -67,13 +68,24 @@ export default function Board(props) {
     });
   }, []);
 
-  if (
-    state.gameType == "bot" &&
-    state.result == 0 &&
-    state.isWhite == state.aiIsWhite
-  ) {
-    makeAIMove();
-  }
+  useEffect(() => {
+    if (
+      state.gameType == "bot" &&
+      state.result == 0 &&
+      state.isWhite == state.aiIsWhite 
+    ) {
+      setState((prevState) => ({
+        ...prevState,
+        makingAIMove: true
+      }));
+    }
+  }, [state.isWhite])
+
+  useEffect(() => {
+    if (state.makingAIMove) {
+      makeAIMove();
+    }
+  }, [state.makingAIMove])
 
   function toggleBoard(row, col) {
     const curSq = (7 - row) * 8 + (7 - col);
@@ -125,6 +137,7 @@ export default function Board(props) {
       promote: (chosen_move >> 12) & 0x7,
       type: (chosen_move >> 15) & 0x7,
     };
+    
     makeMoveHelper(move_vars.from, move_vars.to, move_vars.promote);
   }
 
@@ -156,6 +169,7 @@ export default function Board(props) {
         type: (move >> 15) & 0x7,
       });
     }
+
     mod._free(newMovesPtr);
     return moves;
   }
@@ -179,6 +193,7 @@ export default function Board(props) {
       isWhite: !prevState.isWhite,
       boardPossibleMoves: moves,
       result: newResult,
+      makingAIMove: false
     }));
   }
 
@@ -201,6 +216,7 @@ export default function Board(props) {
           )
         }
         isKingAttacked={state.kingAttackedFunc}
+        flipped={state.flipBoard}
       />
     ))
   );
@@ -233,6 +249,7 @@ export default function Board(props) {
                 state.isWhite,
                 state.canCastle
               );
+
               const newMovesPtr = state.getPossibleMoves();
               const moves = getMovesFromC(newMovesPtr, state.Module);
               return {

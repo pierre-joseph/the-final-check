@@ -49,7 +49,7 @@ extern MoveList cur_all_moves;
 typedef struct {
     Pieces board_pieces;
     bool white_turn;
-    char* can_castle;
+    char can_castle[5];
     int en_passant;
     MoveList all_moves;
     int halfmove_clock;         
@@ -59,10 +59,11 @@ extern Position global_position;
 
 typedef struct {
     MoveList all_moves;
-    char* can_castle;
+    char can_castle[5];
     int en_passant;
     int halfmove_clock;
-    int captured_piece;
+    char moving_piece;
+    char captured_piece;
     int fullmove_number;  
 } UndoInfo;
 
@@ -73,8 +74,6 @@ extern int stack_top;
 void print_bitboard(Bitboard bb);
 void start_game(char* fen, bool white_turn, char* can_castle);
 MoveList* find_possible_board_moves();
-char* can_castle(char* prev, Move move);
-int can_enpassant(Move move);
 void make_board_move(Move move);
 void unmake_board_move(Move move);
 bool is_square_attacked(int king_pos, bool white_attack);

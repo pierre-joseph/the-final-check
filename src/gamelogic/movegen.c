@@ -305,6 +305,7 @@ void make_move_helper(Move move){
         char piece_type = global_position.board_pieces.pieces[i].type;
         uint64_t* cur_bb = &global_position.board_pieces.pieces[i].bb;
         if (GET_BIT(*cur_bb, from) == 1ULL){
+            pos_stack[stack_top].moving_piece = piece_type; 
             CLEAR_BIT(*cur_bb, from); 
             if (type != 4){
                 SET_BIT(*cur_bb, to);

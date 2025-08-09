@@ -57,7 +57,7 @@ export default function Square(props) {
     }
   }
 
-  function getBackgroundColor() {
+  function getSqBackgroundColor() {
     if (
       props.isKingAttacked &&
       props.value != null &&
@@ -74,8 +74,16 @@ export default function Square(props) {
     }
   }
 
-  const backgroundColor = getBackgroundColor();
-  const squareStyles = { backgroundColor: backgroundColor };
+  function get_letter_text(){
+    const abcdefgh = "abcdefgh";
+    return abcdefgh[props.col];
+  }
+
+  const sqBackgroundColor = getSqBackgroundColor();
+  const squareStyles = { backgroundColor: sqBackgroundColor };
+
+  const textBg = lightSquare() ? "#B58863" : "#F0D9B5";
+  const textStyles = {color: textBg}
 
   return (
     <section
@@ -85,6 +93,10 @@ export default function Square(props) {
     >
       {props.value != null && <img className="pieceImg" src={getImage()} />}
       {props.isPossibleMove && <div className="lightCircle"></div>}
+      {((!props.flipped && props.col == 0) || (props.flipped && props.col == 7)) 
+        && <p className="sqRowLabel" style={textStyles}>{props.row}</p>}
+      {((!props.flipped && props.row == 7) || (props.flipped && props.row == 0)) 
+      && <p className="sqColLabel" style={textStyles}>{get_letter_text()}</p>}
     </section>
   );
 }

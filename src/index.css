@@ -15,7 +15,7 @@ header {
 header > span {
   color: #FFFDD0;
   font-family: Inter;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 header > img {
@@ -61,6 +61,28 @@ header > img {
   border-radius: 50%;
   left: 27.5px;
   top: 27.5px;
+}
+
+.sqRowLabel {
+  position: absolute;
+  height: 8px;
+  width: 8px;
+  font-family: Inter;
+  font-weight: 400;
+  margin: 0%;
+  left: 3px;
+  top: 3px;
+}
+
+.sqColLabel {
+  position: absolute;
+  height: 8px;
+  width: 8px;
+  font-family: Inter;
+  font-weight: 400;
+  margin: 0%;
+  left: 65px;
+  top: 55px;
 }
 
 .winningMessage, .startGame {
