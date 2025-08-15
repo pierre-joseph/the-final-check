@@ -180,3 +180,32 @@ header > img {
   color: #B58863;
   font-weight: 600;
 }
+
+/* turnDisplay Styling */
+.turnDisplay {
+  position: absolute;
+  left: 10%;
+  top: 55%;
+  display: flex;
+  flex-direction: row;
+  width: 200px;
+  height: 75px;
+  align-items: center;
+  justify-content: center;
+  background-color: #B58863;
+  border-radius: 2%;
+}
+
+.turnDisplay > span {
+  font-family: Inter;
+  font-weight: 500;
+}
+
+.turnSq {
+  position: relative;
+  width: 55px;
+  height: 55px;
+  padding: 0;
+  border-radius: 20%;
+  margin-right: 10px;
+}

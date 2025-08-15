@@ -287,6 +287,7 @@ Move get_best_move(int depth){
     }
 
     free(all_moves);
+    printf("Cur Evaluation: %d\n", maximizing_player ? alpha : beta);
     return best_move;
 }
 

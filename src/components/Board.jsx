@@ -6,7 +6,8 @@ import GameOver from "./GameOver";
 import PromoteModal from "./PromoteModal";
 import FlipBoard from "./FlipBoard";
 import StartGame from "./StartGame";
-import ChooseColor from "./ChooseColor"
+import ChooseColor from "./ChooseColor";
+import TurnDisplay from "./TurnDisplay";
 
 export default function Board(props) {
   const [state, setState] = useState({
@@ -28,9 +29,9 @@ export default function Board(props) {
     gameType: null,
     startGameFunc: null,
     aiIsWhite: null,
-    AIFuncRandom: null, 
-    AIFuncBest: null, 
-    makingAIMove: false
+    AIFuncRandom: null,
+    AIFuncBest: null,
+    makingAIMove: false,
   });
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function Board(props) {
           kingAttackedFunc: setKingAttacked,
           gameOverFunc: setGameOverFunc,
           AIFuncRandom: setAIFuncRandom,
-          AIFuncBest: setAIFuncBest
+          AIFuncBest: setAIFuncBest,
         };
       });
     });
@@ -73,20 +74,20 @@ export default function Board(props) {
     if (
       state.gameType == "bot" &&
       state.result == 0 &&
-      state.isWhite == state.aiIsWhite 
+      state.isWhite == state.aiIsWhite
     ) {
       setState((prevState) => ({
         ...prevState,
-        makingAIMove: true
+        makingAIMove: true,
       }));
     }
-  }, [state.isWhite, state.aiIsWhite])
+  }, [state.isWhite, state.aiIsWhite]);
 
   useEffect(() => {
     if (state.makingAIMove) {
       makeAIMove();
     }
-  }, [state.makingAIMove])
+  }, [state.makingAIMove]);
 
   function toggleBoard(row, col) {
     const curSq = (7 - row) * 8 + (7 - col);
@@ -125,7 +126,7 @@ export default function Board(props) {
     makeMoveHelper(state.squareSelected, to, type);
     setState((prevState) => ({
       ...prevState,
-      pendingMove: null
+      pendingMove: null,
     }));
   }
 
@@ -138,7 +139,7 @@ export default function Board(props) {
       promote: (chosen_move >> 12) & 0x7,
       type: (chosen_move >> 15) & 0x7,
     };
-    
+
     makeMoveHelper(move_vars.from, move_vars.to, move_vars.promote);
   }
 
@@ -176,12 +177,7 @@ export default function Board(props) {
   }
 
   function makeMoveHelper(from, to, promote) {
-    const newfen = makeMoveInC(
-      from,
-      to,
-      promote,
-      state.Module
-    );
+    const newfen = makeMoveInC(from, to, promote, state.Module);
     const newMovesPtr = state.getPossibleMoves();
     const moves = getMovesFromC(newMovesPtr, state.Module);
     const newResult = state.gameOverFunc();
@@ -194,7 +190,7 @@ export default function Board(props) {
       isWhite: !prevState.isWhite,
       boardPossibleMoves: moves,
       result: newResult,
-      makingAIMove: false
+      makingAIMove: false,
     }));
   }
 
@@ -263,39 +259,42 @@ export default function Board(props) {
           }
         />
       )}
-    
 
-      {state.gameType == "bot" && state.aiIsWhite == null &&
-        <ChooseColor 
+      {state.gameType == "bot" && state.aiIsWhite == null && (
+        <ChooseColor
           setAIWhite={(botIsWhite) =>
-            setState(prevState => {
+            setState((prevState) => {
               return {
-                ...prevState, 
+                ...prevState,
                 flipBoard: botIsWhite,
-                aiIsWhite: botIsWhite
-              }
+                aiIsWhite: botIsWhite,
+              };
             })
           }
         />
-      }
+      )}
 
       {state.result != 0 && (
         <GameOver winner={state.result} restart={props.restart} />
       )}
 
-      {(state.gameType == "human" || (state.aiIsWhite != null)) && state.result == 0 && (
-        <FlipBoard
-          flip={() =>
-            setState((prevState) => {
-              return {
-                ...prevState,
-                flipBoard: !prevState.flipBoard,
-              };
-            })
-          }
-          isOn={state.flipBoard}
-        />
-      )}
+      {(state.gameType == "human" || state.aiIsWhite != null) &&
+        state.result == 0 && (
+          <FlipBoard
+            flip={() =>
+              setState((prevState) => {
+                return {
+                  ...prevState,
+                  flipBoard: !prevState.flipBoard,
+                };
+              })
+            }
+            isOn={state.flipBoard}
+          />
+        )}
+
+      {(state.gameType == "human" || state.aiIsWhite != null) &&
+        state.result == 0 && <TurnDisplay isWhite={state.isWhite} />}
     </main>
   );
 }
