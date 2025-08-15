@@ -1,2 +1,2 @@
-# Chess-bot
+# The Final Check
 This is a basic chess site created by using the React framework. The bot was created in C was compiled into react using the Emscripten compiler. The C code using a bitboard piece representation to represent the board, generate all legal moves, and come up with the best move. This bot uses a minimax algorithm along with alpha beta pruning to be able to find the best move on a high depth. Feel free to play against the bot or against one of your friends!
