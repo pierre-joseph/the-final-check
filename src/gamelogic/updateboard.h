@@ -26,14 +26,19 @@ typedef uint32_t Move;  // A move is a 32-bit packed value
 // bits  6–11:  to square
 // bits 12–14:  promotion piece (0 = none, 1 = R, 2 = N, 3 = B, 4 = Q)
 // bits 15–17:  flags (none(0), capture(1), en passant(2), castling(3), promotion(4), double pawn push (5))
+// bits 18-25:  predicted move score
 
 #define MOVE_FROM(m)        ((m) & 0x3F)  
 #define MOVE_TO(m)          (((m) >> 6) & 0x3F)
 #define MOVE_PROMO(m)       (((m) >> 12) & 0x7)
 #define MOVE_FLAGS(m)       (((m) >> 15) & 0x7)
+#define MOVE_SCORE(m)       ((int16_t)(((m) >> 18) & 0x3FFF) - 8192)
 
-#define MAKE_MOVE(from, to, promo, flags) \
-    (((from) & 0x3F) | (((to) & 0x3F) << 6) | (((promo) & 0x7) << 12) | (((flags) & 0x7) << 15))
+#define MAKE_MOVE(from, to, promo, flags, score) \
+    (((from) & 0x3F) | (((to) & 0x3F) << 6) | (((promo) & 0x7) << 12) | (((flags) & 0x7) << 15) | ((((uint32_t)((score) + 8192)) & 0x3FFF) << 18))
+
+#define SET_MOVE_SCORE(m, score) \
+    ((m) = ((m) & ~(0x3FFF << 18)) | (((uint32_t)((score) + 8192) & 0x3FFF) << 18))
 
 #define MAX_MOVES 256
 typedef struct {
@@ -47,6 +52,7 @@ extern MoveList cur_all_moves;
 #define GET_BIT(bb, sq) (((bb) >> (sq)) & 1ULL)
 
 typedef struct {
+    int board[64];
     Pieces board_pieces;
     bool white_turn;
     char can_castle[5];
@@ -79,5 +85,6 @@ void unmake_board_move(Move move);
 bool is_square_attacked(int king_pos, bool white_attack);
 bool is_move_legal(Move cur_move, bool white_turn);
 bool is_king_attacked(bool white_turn); 
+int count_set_bits(Bitboard n);
 
 #endif

@@ -6,6 +6,7 @@ import GameOver from "./GameOver";
 import PromoteModal from "./PromoteModal";
 import FlipBoard from "./FlipBoard";
 import StartGame from "./StartGame";
+import ChooseColor from "./ChooseColor"
 
 export default function Board(props) {
   const [state, setState] = useState({
@@ -26,7 +27,7 @@ export default function Board(props) {
     pendingMove: null,
     gameType: null,
     startGameFunc: null,
-    aiIsWhite: false,
+    aiIsWhite: null,
     AIFuncRandom: null, 
     AIFuncBest: null, 
     makingAIMove: false
@@ -79,7 +80,7 @@ export default function Board(props) {
         makingAIMove: true
       }));
     }
-  }, [state.isWhite])
+  }, [state.isWhite, state.aiIsWhite])
 
   useEffect(() => {
     if (state.makingAIMove) {
@@ -232,6 +233,7 @@ export default function Board(props) {
             isWhite={state.isWhite}
             promoteTo={updatePromote}
             col={7 - (state.pendingMove % 8)}
+            flipped={state.flipBoard}
             moves={state.boardPossibleMoves.filter(
               (move) =>
                 move.from === state.squareSelected &&
@@ -261,12 +263,27 @@ export default function Board(props) {
           }
         />
       )}
+    
+
+      {state.gameType == "bot" && state.aiIsWhite == null &&
+        <ChooseColor 
+          setAIWhite={(botIsWhite) =>
+            setState(prevState => {
+              return {
+                ...prevState, 
+                flipBoard: botIsWhite,
+                aiIsWhite: botIsWhite
+              }
+            })
+          }
+        />
+      }
 
       {state.result != 0 && (
         <GameOver winner={state.result} restart={props.restart} />
       )}
 
-      {state.gameType != null && state.result == 0 && (
+      {(state.gameType == "human" || (state.aiIsWhite != null)) && state.result == 0 && (
         <FlipBoard
           flip={() =>
             setState((prevState) => {

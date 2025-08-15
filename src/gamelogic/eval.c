@@ -8,12 +8,12 @@
 #include <string.h>
 #include <limits.h>
 
-int PAWN_WEIGHT = 100;
-int KNIGHT_WEIGHT = 300;
-int BISHOP_WEIGHT = 300;
-int ROOK_WEIGHT = 500;
-int QUEEN_WEIGHT = 900;
-int KING_WEIGHT = 0;
+const int PAWN_WEIGHT = 200;
+const int KNIGHT_WEIGHT = 600;
+const int BISHOP_WEIGHT = 600;
+const int ROOK_WEIGHT = 1000;
+const int QUEEN_WEIGHT = 1800;
+const int KING_WEIGHT = 0;
 
 int PAWN_PST[64] = {
     0,  0,  0,  0,  0,  0,  0,  0,
@@ -79,6 +79,9 @@ int KING_PST[64] = {
     -30, -40, -40, -50, -50, -40, -40, -30
 };
 
+int piece_weights[6] = {PAWN_WEIGHT, ROOK_WEIGHT, KNIGHT_WEIGHT, BISHOP_WEIGHT, QUEEN_WEIGHT, KING_WEIGHT};
+int* piece_sq_tables[6][64] = {PAWN_PST, ROOK_PST, KNIGHT_PST, BISHOP_PST, QUEEN_PST, KING_PST};
+
 Move get_random_move(){
     int move_count = global_position.all_moves.count;
     if (move_count > 0){
@@ -90,8 +93,6 @@ Move get_random_move(){
 }
 
 int eval_position(){
-    int piece_weights[6] = {PAWN_WEIGHT, ROOK_WEIGHT, KNIGHT_WEIGHT, BISHOP_WEIGHT, QUEEN_WEIGHT, KING_WEIGHT};
-    int* piece_sq_tables[6][64] = {PAWN_PST, ROOK_PST, KNIGHT_PST, BISHOP_PST, QUEEN_PST, KING_PST};
     int white_pieces = 0;
     int black_pieces = 0;
     for (int i = 0; i < 6; i++){
@@ -109,39 +110,131 @@ int eval_position(){
     return white_pieces - black_pieces;
 }
 
-void order_moves(MoveList* all_moves){
-    int move_count = all_moves->count;
-    int good_moves = 0;
-
-    for (int i = 0; i < move_count; i++){
-       Move cur_move = all_moves->moves[i];
-       int type = MOVE_FLAGS(cur_move);
-       if (type == 1 || type == 4){
-        all_moves->moves[i] = all_moves->moves[good_moves];
-        all_moves->moves[good_moves] = cur_move;
-        good_moves++;
-       }
-    }
+int compare_moves(const void *a, const void *b) {
+    int score_a = (int) MOVE_SCORE(*(uint32_t*)a);
+    int score_b = (int) MOVE_SCORE(*(uint32_t*)b);
+    return score_b - score_a;  
 }
 
-int get_move_eval(int depth, int alpha, int beta){
-    if (depth == 0){
-        return eval_position(); 
+void order_moves(MoveList* all_moves){
+    int move_count = all_moves->count;
+
+    for (int i = 0; i < move_count; i++){
+        Move* cur_move = &all_moves->moves[i];
+        int from = MOVE_FROM(*cur_move);
+        int to = MOVE_TO(*cur_move);
+        int type = MOVE_FLAGS(*cur_move);
+        int promote_to = MOVE_PROMO(*cur_move);
+
+        int16_t starting_guess = 0;
+        if (global_position.white_turn){
+            starting_guess = (*piece_sq_tables)[global_position.board[from] % 6][to];
+        } else {
+            starting_guess = (*piece_sq_tables)[global_position.board[from] % 6][63 - to];
+        }
+        int16_t move_score_guess = starting_guess;
+        
+        if (type == 1){
+            move_score_guess = (10 * piece_weights[global_position.board[to] % 6] / 100) \
+                                - piece_weights[global_position.board[from] % 6] / 100; 
+        } else if (type == 2) {
+            move_score_guess = 9 * (PAWN_WEIGHT / 100);
+        } else if (type == 4){
+            int promote_val;
+            switch (promote_to) {
+                case 1:
+                    promote_val = ROOK_WEIGHT / 100;
+                    break;
+                case 2:
+                    promote_val = KNIGHT_WEIGHT / 100;
+                    break;
+                case 3:
+                    promote_val = BISHOP_WEIGHT / 100;
+                    break;
+                case 4:
+                    promote_val = QUEEN_WEIGHT / 100;
+                    break;
+            }
+
+            move_score_guess += promote_val;
+        } 
+
+        SET_MOVE_SCORE(*cur_move, move_score_guess);
     }
 
+    qsort(all_moves->moves, move_count, sizeof(uint32_t), compare_moves);
+}
+
+int search_all_captures(int alpha, int beta, int cur_depth){
     bool maximizing_player = global_position.white_turn;
-    int best_eval = maximizing_player ? INT_MIN : INT_MAX;
+    int cur_eval = eval_position();
+
+    if (cur_depth > 10) return maximizing_player ? alpha : beta;
+
+    if (maximizing_player){
+        if (cur_eval > alpha) alpha = cur_eval;
+        if (cur_eval >= beta) return beta;
+    } else {
+        if (cur_eval < beta) beta = cur_eval;
+        if (cur_eval <= alpha) return alpha;
+    }
 
     MoveList* all_moves = find_possible_board_moves();
     order_moves(all_moves);
     int move_count = all_moves->count;
 
     if (move_count == 0){
+        int score;
         if (is_king_attacked(maximizing_player)){
-            return best_eval;
+            score = maximizing_player ? INT_MIN + cur_depth : INT_MAX - cur_depth;
         } else {
-            return 0;
+            score = 0;
         }
+        free(all_moves);
+        return score;
+    }
+
+    for (int i = 0; i < move_count; i++){
+        int cur_type = MOVE_FLAGS(all_moves->moves[i]);
+        if (cur_type == 1 || cur_type == 2 || cur_type == 4){
+            make_board_move(all_moves->moves[i]);
+            int eval = search_all_captures(alpha, beta, cur_depth + 1);
+            unmake_board_move(all_moves->moves[i]);
+
+            if (maximizing_player){
+                if (eval > alpha) alpha = eval;
+                if (alpha >= beta) break;
+            } else if (!maximizing_player){
+                if (eval < beta) beta = eval;
+                if (beta <= alpha) break;
+            }
+        }
+    }
+
+    free(all_moves);
+    return maximizing_player ? alpha : beta;
+}
+
+int get_move_eval(int depth, int alpha, int beta){
+    if (depth == 0){
+        return search_all_captures(alpha, beta, 4); 
+    }
+
+    bool maximizing_player = global_position.white_turn;
+
+    MoveList* all_moves = find_possible_board_moves();
+    order_moves(all_moves);
+    int move_count = all_moves->count;
+
+    if (move_count == 0){
+        int score;
+        if (is_king_attacked(maximizing_player)){
+            score = maximizing_player ? INT_MIN + (10 - depth) : INT_MAX - (10 - depth);
+        } else {
+            score = 0;
+        }
+        free(all_moves);
+        return score;
     }
 
     for (int i = 0; i < move_count; i++){
@@ -151,30 +244,16 @@ int get_move_eval(int depth, int alpha, int beta){
         unmake_board_move(all_moves->moves[i]);
 
         if (maximizing_player){
-            if (eval > best_eval){
-                best_eval = eval;
-            }
-
-            if (eval > alpha){
-                alpha = eval;
-            }
-        } else {
-            if (eval < best_eval){
-                best_eval = eval;
-            }
-
-            if (eval < beta){
-                beta = eval;
-            }
-        }
-
-        if (beta < alpha){
-            break;
+            if (eval > alpha) alpha = eval;
+            if (alpha >= beta) break;
+        } else if (!maximizing_player){
+            if (eval < beta) beta = eval;
+            if (beta <= alpha) break;
         }
     }
 
     free(all_moves);
-    return best_eval; 
+    return maximizing_player ? alpha : beta; 
 }
 
 Move get_best_move(int depth){
@@ -184,8 +263,6 @@ Move get_best_move(int depth){
     int move_count = all_moves->count;
 
     bool maximizing_player = global_position.white_turn;
-    int best_eval = maximizing_player ? INT_MIN : INT_MAX;
-
     int alpha = INT_MIN;
     int beta = INT_MAX;
 
@@ -195,26 +272,17 @@ Move get_best_move(int depth){
         unmake_board_move(all_moves->moves[i]);
 
         if (maximizing_player){
-            if (eval > best_eval){
-                best_eval = eval;
-                best_move = all_moves->moves[i];
-            }
-
             if (eval > alpha){
                 alpha = eval;
-            }
-        } else {
-            if (eval < best_eval){
-                best_eval = eval;
                 best_move = all_moves->moves[i];
             }
-
+            if (alpha >= beta) break;
+        } else if (!maximizing_player && eval < beta) {
             if (eval < beta){
                 beta = eval;
+                best_move = all_moves->moves[i];
             }
-        }
-        if (beta < alpha){
-            break;
+            if (beta <= alpha) break;
         }
     }
 

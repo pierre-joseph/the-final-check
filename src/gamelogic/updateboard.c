@@ -113,8 +113,8 @@ void make_board_move(Move move){
     can_enpassant(move);
 
     if (pos_stack[stack_top - 1].captured_piece != '-' 
-        || pos_stack[stack_top - 1].moving_piece == 'P'
-        || pos_stack[stack_top - 1].moving_piece == 'p'){
+        || pos_stack[stack_top - 1].moving_piece == (char) 0
+        || pos_stack[stack_top - 1].moving_piece == (char) 6){
         global_position.halfmove_clock = 0;
     } else {
         global_position.halfmove_clock += 1;
@@ -145,7 +145,7 @@ const char* make_react_move(Move move){
     return get_fen(global_position.board_pieces);
 }
 
-int countSetBits(unsigned int n) {
+int count_set_bits(Bitboard n) {
     int count = 0;
     while (n > 0) {
         count += (n & 1); 
@@ -160,8 +160,8 @@ bool inefficient_material(){
     for (int i = 0; i < 5; i++){
         Piece white = global_position.board_pieces.pieces[i];
         Piece black = global_position.board_pieces.pieces[i + 6];
-        int white_bits = countSetBits(white.bb);
-        int black_bits = countSetBits(black.bb);
+        int white_bits = count_set_bits(white.bb);
+        int black_bits = count_set_bits(black.bb);
         if (i == 2 || i == 3){
             white_pieces += white_bits * 0.5;
             black_pieces += black_bits * 0.5;
@@ -242,6 +242,7 @@ int is_game_over(){
             return 1;
         }
     }
+
     if (inefficient_material()){
         return 1;
     }
@@ -359,6 +360,7 @@ void init_king_attacks(){
 void start_game(char* fen, bool white_turn, char* can_castle){
     srand(time(0));
     global_position.board_pieces = get_bitboards(fen);
+    set_board();
     global_position.white_turn = white_turn;
     global_position.en_passant = -1;
     global_position.halfmove_clock = 0;

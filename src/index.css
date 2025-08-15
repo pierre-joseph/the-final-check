@@ -1,8 +1,16 @@
+/* main styling */
+main {
+  display: flex;
+  flex-direction: row;
+}
+
+/* body styling */
 body {
   margin: 0%;
   background-color: #FFFDD0;
 }
 
+/* header styling */
 header {
   display: flex;
   align-items: center;
@@ -15,7 +23,8 @@ header {
 header > span {
   color: #FFFDD0;
   font-family: Inter;
-  font-weight: 500;
+  font-weight: 400;
+  font-size: 25px;
 }
 
 header > img {
@@ -23,6 +32,7 @@ header > img {
   width: 80px;
 }
 
+/* board styling */
 .boardElement {
   position: absolute;
   left: 50%;
@@ -85,7 +95,8 @@ header > img {
   top: 55px;
 }
 
-.winningMessage, .startGame {
+/* Message styling */
+.winningMessage, .startGame, .chooseColor {
   font-family: Inter;
   font-size: 5rem;
   font-weight: 400;
@@ -102,7 +113,7 @@ header > img {
   flex-direction: column;
 }
 
-.winningMessage button, .startGame button {
+.winningMessage button, .startGame button, .chooseColor button {
   font-family: Inter;
   font-weight: 400;
   font-size: 3rem;
@@ -115,17 +126,13 @@ header > img {
   margin-bottom: 5px;
 }
 
-.winningMessage button:hover, .startGame button:hover {
+.winningMessage button:hover, .startGame button:hover, .chooseColor button:hover {
   background-color: #F0D9B5;
   color: #B58863;
   border-color: 1px solid white;
 }
 
-main {
-  display: flex;
-  flex-direction: row;
-}
-
+/* flip button styling */
 .flipElement {
   position: absolute;
   left: 75%;

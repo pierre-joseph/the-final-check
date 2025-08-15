@@ -60,12 +60,12 @@ export default function PromoteModal(props) {
     );
   });
 
-  const leftOffset = 75 * props.col;
+  const leftOffset = props.flipped ? 75 * (7 - props.col) : 75 * props.col;
   return (
     <section
       style={{
         position: "absolute",
-        top: props.isWhite ? "0px" : "300px",
+        top: ((props.isWhite && !props.flipped) || (!props.isWhite && props.flipped)) ? "0px" : "300px",
         left: `${leftOffset}px`,
       }}
     >
