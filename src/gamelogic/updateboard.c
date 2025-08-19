@@ -163,14 +163,14 @@ bool inefficient_material(){
         int white_bits = count_set_bits(white.bb);
         int black_bits = count_set_bits(black.bb);
         if (i == 2 || i == 3){
-            white_pieces += white_bits * 0.5;
-            black_pieces += black_bits * 0.5;
-        } else {
             white_pieces += white_bits;
             black_pieces += black_bits;
+        } else {
+            white_pieces += white_bits * 2;
+            black_pieces += black_bits * 2;
         }
 
-        if (white_pieces >= 1 || black_pieces >= 1){
+        if (white_pieces >= 2 || black_pieces >= 2){
             return false;
         }
     }

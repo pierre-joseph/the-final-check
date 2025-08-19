@@ -94,7 +94,7 @@ export default function Square(props) {
       {props.value != null && <img className="pieceImg" src={getImage()} />}
       {props.isPossibleMove && <div className="lightCircle"></div>}
       {((!props.flipped && props.col == 0) || (props.flipped && props.col == 7)) 
-        && <p className="sqRowLabel" style={textStyles}>{props.row}</p>}
+        && <p className="sqRowLabel" style={textStyles}>{8 - props.row}</p>}
       {((!props.flipped && props.row == 7) || (props.flipped && props.row == 0)) 
       && <p className="sqColLabel" style={textStyles}>{get_letter_text()}</p>}
     </section>

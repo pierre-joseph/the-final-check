@@ -14,6 +14,8 @@ const int BISHOP_WEIGHT = 600;
 const int ROOK_WEIGHT = 1000;
 const int QUEEN_WEIGHT = 1800;
 const int KING_WEIGHT = 0;
+const int MAX_MATERIAL = 16 * PAWN_WEIGHT + 8 * KNIGHT_WEIGHT + 4 * ROOK_WEIGHT + 2 * QUEEN_WEIGHT;
+const int MAX_PHASE = 24;
 
 int PAWN_PST[64] = {
     0,  0,  0,  0,  0,  0,  0,  0,
@@ -57,6 +59,7 @@ int ROOK_PST[64] = {
      5,  10, 10, 10, 10, 10, 10, 5,
      0,  0,  0,  0,  0,  0,  0,  0,
 };
+
 int QUEEN_PST[64] = {
     -20,-10,-10, -5, -5,-10,-10,-20
     -10,  0,  5,  0,  0,  0,  0,-10,
@@ -79,8 +82,31 @@ int KING_PST[64] = {
     -30, -40, -40, -50, -50, -40, -40, -30
 };
 
+int PAWN_PST_ENDGAME[64] = {
+    0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,
+    40, 40, 40,  40, 40, 40, 40, 40,
+    80,  80,  80, 80, 80, 80, 80, 80,
+    120, 120, 120, 120, 120, 120, 120, 120,
+    160, 160, 160, 160, 160, 160, 160, 160,
+    250, 250, 250, 250, 250, 250, 250, 250,
+    0,  0,  0,  0,  0,  0,  0,  0
+};
+
+int KING_PST_ENDGAME[64] = {
+    -50, -40, -40, -40, -40, -40, -40, -50
+    -40, -20, -20, -20, -20, -20, -20, -40,
+    -40, -20, -5, -5, -5, -5, -20, -40,
+    -40, -20, -5, 0, 0, -5, -20, -40,
+    -40, -20, -5, 0, 0, -5, -20, -40,
+    -40, -20, -5, -5, -5, -5, -20, -40,
+    -40, -20, -20, -20, -20, -20, -20, -40,
+    -50, -40, -40, -40, -40, -40, -40, -50
+};
+
 int piece_weights[6] = {PAWN_WEIGHT, ROOK_WEIGHT, KNIGHT_WEIGHT, BISHOP_WEIGHT, QUEEN_WEIGHT, KING_WEIGHT};
-int* piece_sq_tables[6][64] = {PAWN_PST, ROOK_PST, KNIGHT_PST, BISHOP_PST, QUEEN_PST, KING_PST};
+int* psts[6][64] = {PAWN_PST, ROOK_PST, KNIGHT_PST, BISHOP_PST, QUEEN_PST, KING_PST};
+int* endgame_psts[6][64] = {PAWN_PST_ENDGAME, ROOK_PST, KNIGHT_PST, BISHOP_PST, QUEEN_PST, KING_PST_ENDGAME};
 
 Move get_random_move(){
     int move_count = global_position.all_moves.count;
@@ -93,21 +119,76 @@ Move get_random_move(){
 }
 
 int eval_position(){
-    int white_pieces = 0;
-    int black_pieces = 0;
-    for (int i = 0; i < 6; i++){
-        for (int sq = 0; sq < 64; sq++){
+    int white_material = 0;
+    int black_material = 0;
+    int cur_phase = MAX_PHASE;
+    int white_pieces_eval = 0;
+    int black_pieces_eval = 0;
+
+    for (int sq = 0; sq < 64; sq++){
+        for (int i = 1; i < 5; i++){
             if (GET_BIT(global_position.board_pieces.pieces[i].bb, sq) == 1ULL){
-                white_pieces += piece_weights[i]; 
-                white_pieces += (*piece_sq_tables)[i][sq];
+                if (i == 1){
+                    cur_phase -= 2;
+                } else if (i == 2 || i == 3){
+                    cur_phase -= 1;
+                } else if (i == 4){
+                    cur_phase -= 4;
+                }
+
+                white_material += piece_weights[i];
+                white_pieces_eval += piece_weights[i];
+                white_pieces_eval += (*psts)[i][sq];
+                break;
             } else if (GET_BIT(global_position.board_pieces.pieces[i + 6].bb, sq) == 1ULL){
-                black_pieces += piece_weights[i]; 
-                black_pieces += (*piece_sq_tables)[i][63 - sq];
+                if (i == 1){
+                    cur_phase -= 2;
+                } else if (i == 2 || i == 3){
+                    cur_phase -= 1;
+                } else if (i == 4){
+                    cur_phase -= 4;
+                }
+
+                black_material += piece_weights[i];
+                black_pieces_eval += piece_weights[i];
+                black_pieces_eval += (*psts)[i][63 - sq];
+                break;
             }
         }
     }
 
-    return white_pieces - black_pieces;
+    for (int sq = 0; sq < 64; sq++){
+        if (GET_BIT(global_position.board_pieces.pieces[0].bb, sq) == 1ULL){
+            white_material += piece_weights[0];
+            white_pieces_eval += piece_weights[0];
+            white_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[0][sq] \
+            + (cur_phase) * (*endgame_psts)[0][sq]) / MAX_PHASE);
+        } else if (GET_BIT(global_position.board_pieces.pieces[6].bb, sq) == 1ULL){
+            black_material += piece_weights[0];
+            black_pieces_eval += piece_weights[0];
+            black_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[0][63 - sq] \
+            + (cur_phase) * (*endgame_psts)[0][63 - sq]) / MAX_PHASE);
+        } else if (GET_BIT(global_position.board_pieces.pieces[5].bb, sq) == 1ULL){
+            white_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[5][sq] \
+            + (cur_phase) * (*endgame_psts)[5][sq]) / MAX_PHASE);
+        } else if (GET_BIT(global_position.board_pieces.pieces[11].bb, sq) == 1ULL){
+            black_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[5][63 - sq] \
+            + (cur_phase) * (*endgame_psts)[5][63 - sq]) / MAX_PHASE);
+        }
+    }
+
+    int white_king_sq = __builtin_ctzll(global_position.board_pieces.pieces[5].bb);
+    int black_king_sq = __builtin_ctzll(global_position.board_pieces.pieces[11].bb);
+    int row_col_difference = fabs(floor(white_king_sq / 8) - floor(black_king_sq / 8)) \
+                                + abs((white_king_sq % 8) - (black_king_sq % 8));
+
+    if (white_material > black_material){
+        white_pieces_eval -= floor(1.5 * row_col_difference * cur_phase);
+    } else if (white_material < black_material) {
+        black_pieces_eval -= floor(1.5 * row_col_difference * cur_phase);
+    }
+
+    return white_pieces_eval - black_pieces_eval;
 }
 
 int compare_moves(const void *a, const void *b) {
@@ -128,9 +209,9 @@ void order_moves(MoveList* all_moves){
 
         int16_t starting_guess = 0;
         if (global_position.white_turn){
-            starting_guess = (*piece_sq_tables)[global_position.board[from] % 6][to];
+            starting_guess = (*psts)[global_position.board[from] % 6][to];
         } else {
-            starting_guess = (*piece_sq_tables)[global_position.board[from] % 6][63 - to];
+            starting_guess = (*psts)[global_position.board[from] % 6][63 - to];
         }
         int16_t move_score_guess = starting_guess;
         
@@ -169,8 +250,6 @@ int search_all_captures(int alpha, int beta, int cur_depth){
     bool maximizing_player = global_position.white_turn;
     int cur_eval = eval_position();
 
-    if (cur_depth > 10) return maximizing_player ? alpha : beta;
-
     if (maximizing_player){
         if (cur_eval > alpha) alpha = cur_eval;
         if (cur_eval >= beta) return beta;
@@ -178,6 +257,8 @@ int search_all_captures(int alpha, int beta, int cur_depth){
         if (cur_eval < beta) beta = cur_eval;
         if (cur_eval <= alpha) return alpha;
     }
+
+    if (cur_depth >= 10) return maximizing_player ? alpha : beta;
 
     MoveList* all_moves = find_possible_board_moves();
     order_moves(all_moves);
