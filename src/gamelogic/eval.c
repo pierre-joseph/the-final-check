@@ -7,7 +7,10 @@
 #include <math.h>
 #include <string.h>
 #include <limits.h>
+#include <time.h>
 
+
+TTEntry transposition_table[1 << 20];
 const int PAWN_WEIGHT = 200;
 const int KNIGHT_WEIGHT = 600;
 const int BISHOP_WEIGHT = 600;
@@ -16,6 +19,8 @@ const int QUEEN_WEIGHT = 1800;
 const int KING_WEIGHT = 0;
 const int MAX_MATERIAL = 16 * PAWN_WEIGHT + 8 * KNIGHT_WEIGHT + 4 * ROOK_WEIGHT + 2 * QUEEN_WEIGHT;
 const int MAX_PHASE = 24;
+int searched;
+int tts;
 
 int PAWN_PST[64] = {
     0,  0,  0,  0,  0,  0,  0,  0,
@@ -246,9 +251,45 @@ void order_moves(MoveList* all_moves){
     qsort(all_moves->moves, move_count, sizeof(uint32_t), compare_moves);
 }
 
+TTEntry* probe_tt(uint64_t hash, int depth, int alpha_orig, int beta_orig) {
+    TTEntry *entry = &transposition_table[TT_INDEX(hash)];
+    if (entry->key == hash && entry->depth >= depth) {
+        switch (entry->flag) {
+            case 1:
+                return entry;  
+            case 2:
+                if (entry->eval >= beta_orig) return entry; 
+                break;
+            case 3:
+                if (entry->eval <= alpha_orig) return entry; 
+                break;
+        }
+    }
+
+    return NULL; 
+}
+
+void store_tt(uint64_t hash, int depth, int eval, int alpha_orig, int beta_orig) {
+    int flag = 1;
+    if (eval >= beta_orig) {
+        flag = 2;
+    } else if (eval <= alpha_orig) {
+        flag = 3;
+    }
+
+    TTEntry *entry = &transposition_table[TT_INDEX(hash)];
+    entry->key = hash;
+    entry->depth = depth;
+    entry->eval = eval;
+    entry->flag = flag;
+}
+
 int search_all_captures(int alpha, int beta, int cur_depth){
     bool maximizing_player = global_position.white_turn;
     int cur_eval = eval_position();
+
+    int alpha_orig = alpha;
+    int beta_orig = beta;
 
     if (maximizing_player){
         if (cur_eval > alpha) alpha = cur_eval;
@@ -279,7 +320,19 @@ int search_all_captures(int alpha, int beta, int cur_depth){
         int cur_type = MOVE_FLAGS(all_moves->moves[i]);
         if (cur_type == 1 || cur_type == 2 || cur_type == 4){
             make_board_move(all_moves->moves[i]);
-            int eval = search_all_captures(alpha, beta, cur_depth + 1);
+            searched++;
+
+            TTEntry *entry = probe_tt(global_position.hash, 4 - cur_depth, alpha_orig, beta_orig);
+            int eval;
+
+            if (entry && entry->depth >= 4 - cur_depth){
+                tts++;
+                eval = entry->eval;
+            } else {
+                eval = search_all_captures(alpha, beta, cur_depth + 1);
+                store_tt(global_position.hash, cur_depth, eval, alpha_orig, beta_orig);
+            }
+
             unmake_board_move(all_moves->moves[i]);
 
             if (maximizing_player){
@@ -302,6 +355,8 @@ int get_move_eval(int depth, int alpha, int beta){
     }
 
     bool maximizing_player = global_position.white_turn;
+    int alpha_orig = alpha;
+    int beta_orig = beta;
 
     MoveList* all_moves = find_possible_board_moves();
     order_moves(all_moves);
@@ -320,8 +375,18 @@ int get_move_eval(int depth, int alpha, int beta){
 
     for (int i = 0; i < move_count; i++){
         make_board_move(all_moves->moves[i]);
-        int new_depth = depth - 1;
-        int eval = get_move_eval(new_depth, alpha, beta);
+        searched++;
+        TTEntry *entry = probe_tt(global_position.hash, depth, alpha_orig, beta_orig);
+        int eval;
+
+        if (entry && entry->depth >= depth){
+            tts++;
+            eval = entry->eval;
+        } else {
+            eval = get_move_eval(depth - 1, alpha, beta);
+            store_tt(global_position.hash, depth, eval, alpha_orig, beta_orig);
+        }
+
         unmake_board_move(all_moves->moves[i]);
 
         if (maximizing_player){
@@ -338,7 +403,14 @@ int get_move_eval(int depth, int alpha, int beta){
 }
 
 Move get_best_move(int depth){
-    MoveList* all_moves = find_possible_board_moves();
+    clock_t start, end;
+    double cpu_time_used;
+
+    start = clock();
+
+    searched = 0;
+    tts = 0;
+    MoveList *all_moves = find_possible_board_moves();
     order_moves(all_moves);
     Move best_move = all_moves->moves[0];
     int move_count = all_moves->count;
@@ -349,6 +421,7 @@ Move get_best_move(int depth){
 
     for (int i = 0; i < move_count; i++){
         make_board_move(all_moves->moves[i]);
+        searched++;
         int eval = get_move_eval(depth - 1, alpha, beta);
         unmake_board_move(all_moves->moves[i]);
 
@@ -368,7 +441,13 @@ Move get_best_move(int depth){
     }
 
     free(all_moves);
-    printf("Cur Evaluation: %d\n", maximizing_player ? alpha : beta);
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+    printf("Cur Evaluation: %.2f\n", maximizing_player ? (float) alpha / PAWN_WEIGHT : (float) beta / PAWN_WEIGHT);
+    printf("Positions Searched: %d\n", searched);
+    printf("Transpositions: %d\n", tts);
+    printf("Move evaluation took %.2f seconds\n", cpu_time_used);
     return best_move;
 }
 

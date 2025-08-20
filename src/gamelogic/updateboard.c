@@ -16,6 +16,10 @@ Bitboard king_attacks[64];
 Position global_position;
 MoveList cur_all_moves; 
 UndoInfo pos_stack[MAX_DEPTH];
+uint64_t zobrist_table[12][64];
+uint64_t zobrist_castling[4];
+uint64_t zobrist_enpassant[8];
+uint64_t zobrist_white_to_move; 
 int stack_top;
 
 void print_bitboard(Bitboard bb) {
@@ -90,6 +94,19 @@ void can_castle(Move move){
     }
 }
 
+void update_zobrist(){
+    if (global_position.en_passant != -1) {
+        global_position.hash ^= zobrist_enpassant[global_position.en_passant % 8];
+    }
+
+    char can_castle_vals[4] = {'K', 'Q', 'k', 'q'};
+    for (int i = 0; i < 4; i++){
+        if (global_position.can_castle[i] == can_castle_vals[i]){
+            global_position.hash ^= zobrist_castling[i];
+        }
+    }
+}
+
 void make_board_move(Move move){
     UndoInfo cur_pos = {
         .all_moves = global_position.all_moves,
@@ -97,7 +114,8 @@ void make_board_move(Move move){
         .halfmove_clock = global_position.halfmove_clock,
         .fullmove_number = global_position.fullmove_number,
         .moving_piece = '-',
-        .captured_piece = '-'
+        .captured_piece = '-',
+        .hash = global_position.hash
     };
 
     for (int i = 0; i < 5; i++){
@@ -109,8 +127,11 @@ void make_board_move(Move move){
     stack_top++; 
 
     global_position.white_turn = !global_position.white_turn;
+    global_position.hash ^= zobrist_white_to_move;
+    update_zobrist();
     can_castle(move);
     can_enpassant(move);
+    update_zobrist();
 
     if (pos_stack[stack_top - 1].captured_piece != '-' 
         || pos_stack[stack_top - 1].moving_piece == (char) 0
@@ -132,6 +153,7 @@ void unmake_board_move(Move move){
     global_position.en_passant = pos_stack[stack_top].en_passant;
     global_position.halfmove_clock = pos_stack[stack_top].halfmove_clock;
     global_position.fullmove_number = pos_stack[stack_top].fullmove_number;
+    global_position.hash = pos_stack[stack_top].hash;
 
     for (int i = 0; i < 5; i++){
         global_position.can_castle[i] = pos_stack[stack_top].can_castle[i];
@@ -289,6 +311,7 @@ void init_pawn_attacks(){
         int row = floor(sq / 8);
         int col = sq % 8; 
         int start = row * 8 + col;
+
         //white
         pawn_attacks[0][sq] = 0;
         if (sq < 57 & col > 0){
@@ -357,6 +380,57 @@ void init_king_attacks(){
     }
 }
 
+uint64_t xor_shift64() {
+    static uint64_t state = 88172645463325252ULL; 
+    state ^= state >> 12;
+    state ^= state << 25;
+    state ^= state >> 27;
+    return state * 2685821657736338717ULL;
+}
+
+void init_zobrist() {
+    for (int piece = 0; piece < 12; piece++) {
+        for (int sq = 0; sq < 64; sq++) {
+            zobrist_table[piece][sq] = xor_shift64();
+        }
+    }
+
+    for (int i = 0; i < 4; i++) {
+        zobrist_castling[i] = xor_shift64();
+    }
+
+    for (int i = 0; i < 8; i++) {
+        zobrist_enpassant[i] = xor_shift64();
+    }
+
+    zobrist_white_to_move = xor_shift64();
+}
+
+void set_starting_hash(){
+    global_position.hash = 0ULL;
+    for (int sq = 0; sq < 64; sq++) {
+        int piece = global_position.board[sq];
+        if (piece != -1) {
+            global_position.hash ^= zobrist_table[piece][sq];
+        }
+    }
+
+    if (global_position.white_turn) {
+        global_position.hash ^= zobrist_white_to_move;
+    }
+
+    char can_castle_vals[4] = {'K', 'Q', 'k', 'q'};
+    for (int i = 0; i < 4; i++){
+        if (global_position.can_castle[i] == can_castle_vals[i]){
+            global_position.hash ^= zobrist_castling[i];
+        }
+    }
+    
+    if (global_position.en_passant != -1) {
+        global_position.hash ^= zobrist_enpassant[global_position.en_passant];
+    }
+}
+
 void start_game(char* fen, bool white_turn, char* can_castle){
     srand(time(0));
     global_position.board_pieces = get_bitboards(fen);
@@ -373,4 +447,6 @@ void start_game(char* fen, bool white_turn, char* can_castle){
     init_pawn_attacks();
     init_knight_attacks();
     init_king_attacks();
+    init_zobrist();
+    set_starting_hash();
 }

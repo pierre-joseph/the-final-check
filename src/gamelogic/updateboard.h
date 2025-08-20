@@ -10,6 +10,11 @@ extern Bitboard pawn_attacks[2][64];
 extern Bitboard knight_attacks[64];
 extern Bitboard king_attacks[64];
 
+extern uint64_t zobrist_table[12][64];
+extern uint64_t zobrist_castling[4];
+extern uint64_t zobrist_enpassant[8];
+extern uint64_t zobrist_white_to_move; 
+
 typedef struct {
     char type;
     Bitboard bb;
@@ -60,6 +65,7 @@ typedef struct {
     MoveList all_moves;
     int halfmove_clock;         
     int fullmove_number;  
+    uint64_t hash; 
 } Position;
 extern Position global_position;
 
@@ -70,7 +76,8 @@ typedef struct {
     int halfmove_clock;
     char moving_piece;
     char captured_piece;
-    int fullmove_number;  
+    int fullmove_number; 
+    uint64_t hash;  
 } UndoInfo;
 
 #define MAX_DEPTH 512

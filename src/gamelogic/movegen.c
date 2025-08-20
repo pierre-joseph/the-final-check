@@ -306,7 +306,8 @@ void make_move_helper(Move move){
         char piece_type = global_position.board_pieces.pieces[idx].type;
         uint64_t* cur_bb = &global_position.board_pieces.pieces[idx].bb;
         pos_stack[stack_top].moving_piece = (char) idx; 
-        CLEAR_BIT(*cur_bb, from); 
+        CLEAR_BIT(*cur_bb, from);
+        global_position.hash ^= zobrist_table[global_position.board[from]][from];
         if (type != 4){
             SET_BIT(*cur_bb, to);
         }
@@ -317,9 +318,11 @@ void make_move_helper(Move move){
         char piece_type = global_position.board_pieces.pieces[idx].type;
         uint64_t* cur_bb = &global_position.board_pieces.pieces[idx].bb;
         pos_stack[stack_top].captured_piece = (char) idx; 
+        global_position.hash ^= zobrist_table[global_position.board[to]][to];
         CLEAR_BIT(*cur_bb, to); 
     }
 
+    global_position.hash ^= zobrist_table[global_position.board[from]][to];
     global_position.board[to] = global_position.board[from];
     global_position.board[from] = -1;
 
@@ -327,9 +330,11 @@ void make_move_helper(Move move){
         if (to < 32){
             CLEAR_BIT(global_position.board_pieces.pieces[0].bb, to + 8); 
             global_position.board[to + 8] = -1;
+            global_position.hash ^= zobrist_table[0][to + 8];
         } else {
             CLEAR_BIT(global_position.board_pieces.pieces[6].bb, to - 8); 
             global_position.board[to - 8] = -1;
+            global_position.hash ^= zobrist_table[6][to - 8];
         }
     } else if (type == 3){
         if (from == 3){
@@ -338,11 +343,15 @@ void make_move_helper(Move move){
                 SET_BIT(global_position.board_pieces.pieces[1].bb, 2);   
                 global_position.board[0] = -1;
                 global_position.board[2] = 1;
+                global_position.hash ^= zobrist_table[1][0];
+                global_position.hash ^= zobrist_table[1][2];
             } else {
                 CLEAR_BIT(global_position.board_pieces.pieces[1].bb, 7); 
                 SET_BIT(global_position.board_pieces.pieces[1].bb, 4);
                 global_position.board[7] = -1;
                 global_position.board[4] = 1;
+                global_position.hash ^= zobrist_table[1][7];
+                global_position.hash ^= zobrist_table[1][4];
             }
         } else {
             if (from > to){
@@ -350,20 +359,28 @@ void make_move_helper(Move move){
                 SET_BIT(global_position.board_pieces.pieces[7].bb, 58);   
                 global_position.board[56] = -1;
                 global_position.board[58] = 7;
+                global_position.hash ^= zobrist_table[7][56];
+                global_position.hash ^= zobrist_table[7][58];
             } else {
                 CLEAR_BIT(global_position.board_pieces.pieces[7].bb, 63); 
                 SET_BIT(global_position.board_pieces.pieces[7].bb, 60);
                 global_position.board[63] = -1;
                 global_position.board[60] = 7;
+                global_position.hash ^= zobrist_table[7][63];
+                global_position.hash ^= zobrist_table[7][60];
             }
         }
     } else if (type == 4){
         if (to > 31){
             SET_BIT(global_position.board_pieces.pieces[promote].bb, to);
             global_position.board[to] = promote;
+            global_position.hash ^= zobrist_table[0][to];
+            global_position.hash ^= zobrist_table[promote][to];
         } else {
             SET_BIT(global_position.board_pieces.pieces[promote + 6].bb, to);
             global_position.board[to] = promote + 6;
+            global_position.hash ^= zobrist_table[6][to];
+            global_position.hash ^= zobrist_table[promote + 6][to];
         }
     }
 }
@@ -393,7 +410,7 @@ void unmake_move_helper(Move move){
         char piece_type = global_position.board_pieces.pieces[idx].type;
         uint64_t* cur_bb = &global_position.board_pieces.pieces[idx].bb;
         SET_BIT(*cur_bb, to);
-        global_position.board[to] = pos_stack[stack_top].captured_piece;
+        global_position.board[to] = idx;
     }
 
     if (type == 2){
