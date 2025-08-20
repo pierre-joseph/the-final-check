@@ -1,0 +1,6 @@
+[submodule "Unity"]
+	path = Unity
+	url = https://github.com/pierre-joseph/Unity.git
+[submodule "emsdk"]
+	path = emsdk
+	url = https://github.com/emscripten-core/emsdk.git
