@@ -20,6 +20,8 @@ uint64_t zobrist_table[12][64];
 uint64_t zobrist_castling[4];
 uint64_t zobrist_enpassant[8];
 uint64_t zobrist_white_to_move; 
+uint64_t game_hashes[MAX_DEPTH];
+
 int stack_top;
 
 void print_bitboard(Bitboard bb) {
@@ -112,7 +114,7 @@ void make_board_move(Move move){
         .all_moves = global_position.all_moves,
         .en_passant = global_position.en_passant,
         .halfmove_clock = global_position.halfmove_clock,
-        .fullmove_number = global_position.fullmove_number,
+        .fullmove_number = global_position.move_count,
         .moving_piece = '-',
         .captured_piece = '-',
         .hash = global_position.hash
@@ -141,9 +143,8 @@ void make_board_move(Move move){
         global_position.halfmove_clock += 1;
     }
 
-    if (global_position.white_turn){
-        global_position.fullmove_number += 1;
-    }
+
+    global_position.move_count += 1;
 }
 
 void unmake_board_move(Move move){
@@ -152,7 +153,7 @@ void unmake_board_move(Move move){
     global_position.all_moves = pos_stack[stack_top].all_moves;
     global_position.en_passant = pos_stack[stack_top].en_passant;
     global_position.halfmove_clock = pos_stack[stack_top].halfmove_clock;
-    global_position.fullmove_number = pos_stack[stack_top].fullmove_number;
+    global_position.move_count = pos_stack[stack_top].fullmove_number;
     global_position.hash = pos_stack[stack_top].hash;
 
     for (int i = 0; i < 5; i++){
@@ -164,6 +165,7 @@ void unmake_board_move(Move move){
 
 const char* make_react_move(Move move){
     make_board_move(move);
+    game_hashes[global_position.move_count - 1] = global_position.hash;
     return get_fen(global_position.board_pieces);
 }
 
@@ -230,12 +232,13 @@ bool is_square_attacked(int king_pos, bool white_attack){
         int index = white_attack ? i : i + 6;
         char given_type = global_position.board_pieces.pieces[index].type;
         uint64_t bitboard = global_position.board_pieces.pieces[index].bb;
-        for (int sq = 0; sq < 64; sq++){
-            if (GET_BIT(bitboard, sq) == 1ULL &&
-            can_piece_attack_square(global_position.board_pieces.pieces[index], king_pos, white_attack, sq)){ 
+        while (bitboard){
+            int sq = __builtin_ctzll(bitboard);
+            bitboard &= bitboard - 1;
+            if (can_piece_attack_square(global_position.board_pieces.pieces[index], king_pos, white_attack, sq)){ 
                 return true;
             }
-        }  
+        }
     }
     return false;
 }
@@ -265,6 +268,20 @@ int is_game_over(){
         }
     }
 
+    int position_count = 0;
+    for (int i = 0; i < global_position.move_count; i++){
+        if (game_hashes[i] == global_position.hash){
+            position_count++;
+            if (position_count == 3){
+                return 1; 
+            }
+        }
+    }
+
+    if (global_position.halfmove_clock == 50){
+        return 1; 
+    }
+
     if (inefficient_material()){
         return 1;
     }
@@ -284,17 +301,17 @@ MoveList* find_possible_board_moves(){
         if (is_turn) {
             Bitboard my_pieces = global_position.white_turn ? white_pieces : black_pieces;
             Bitboard opp_pieces = global_position.white_turn ? black_pieces : white_pieces;
-            for (int sq = 0; sq < 64; sq++){
-                if (GET_BIT(bitboard, sq) == 1ULL){
-                    MoveList moves_from_sq;
-                    moves_from_sq.count = 0;
-                    get_all_moves_from_square(global_position.board_pieces.pieces[i], my_pieces, opp_pieces, 
-                    sq, global_position.can_castle, global_position.en_passant, &moves_from_sq);
-                    for (int move = 0; move < moves_from_sq.count; move++){
-                        if (is_move_legal(moves_from_sq.moves[move], global_position.white_turn)){
-                            all_moves->moves[all_moves->count] = moves_from_sq.moves[move];
-                            all_moves->count++;
-                        }
+            while (bitboard){
+                int sq = __builtin_ctzll(bitboard);
+                bitboard &= bitboard - 1;
+                MoveList moves_from_sq;
+                moves_from_sq.count = 0;
+                get_all_moves_from_square(global_position.board_pieces.pieces[i], my_pieces, opp_pieces, 
+                sq, global_position.can_castle, global_position.en_passant, &moves_from_sq);
+                for (int move = 0; move < moves_from_sq.count; move++){
+                    if (is_move_legal(moves_from_sq.moves[move], global_position.white_turn)){
+                        all_moves->moves[all_moves->count] = moves_from_sq.moves[move];
+                        all_moves->count++;
                     }
                 }
             }
@@ -438,7 +455,7 @@ void start_game(char* fen, bool white_turn, char* can_castle){
     global_position.white_turn = white_turn;
     global_position.en_passant = -1;
     global_position.halfmove_clock = 0;
-    global_position.fullmove_number = 0;
+    global_position.move_count = 0;
 
     for (int i = 0; i < 5; i++){
         global_position.can_castle[i] = can_castle[i];

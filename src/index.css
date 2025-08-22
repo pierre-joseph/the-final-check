@@ -136,7 +136,7 @@ header > img {
 .flipElement {
   position: absolute;
   left: 75%;
-  top: 55%;
+  top: 62%;
   display: flex;
   flex-direction: column;
   width: 200px;
@@ -147,8 +147,8 @@ header > img {
 .flipButton {
   width: 80px;
   height: 40px;
-  background-color: #B58863;
-  border: thick solid black;
+  background-color: white;
+  border: solid #B58863;
   border-radius: 40px;
   position: relative;
   cursor: pointer;
@@ -156,23 +156,24 @@ header > img {
 }
 
 .flipButton.on {
-  background-color: #FFFDD0;
+  background-color: lightgoldenrodyellow;
 }
 
 .flipCircle {
-  width: 32px;
-  height: 32px;
-  background-color: white;
-  border: 2px solid black;
+  width: 35px;
+  height: 35px;
+  background-color: #D6B588;
   border-radius: 50%;
   position: absolute;
   top: 3px;
   left: 3px;
   transition: left 0.3s ease;
+  margin-left: 2px;
 }
 
 .flipButton.on .flipCircle {
-  left: 40px;
+  background-color: #B58863;
+  left: 38px;
 }
 
 .flipText {
@@ -184,8 +185,8 @@ header > img {
 /* turnDisplay Styling */
 .turnDisplay {
   position: absolute;
-  left: 10%;
-  top: 55%;
+  left: 75%;
+  top: 48%;
   display: flex;
   flex-direction: row;
   width: 200px;
@@ -208,4 +209,40 @@ header > img {
   padding: 0;
   border-radius: 20%;
   margin-right: 10px;
+}
+
+/* movePanel Styling */
+.movePanel {
+  position: absolute;
+  left: 10%;
+  top: 45%;
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  height: 300px;
+  align-items: center;
+  background-color: #B58863;
+  border-radius: 2%;
+
+  font-family: Inter;
+  font-weight: 500;
+  color: #FFFDD0;
+  overflow: auto; 
+}
+
+.movePanel > span {
+  font-size: 20px;
+  padding-top: 25px;
+}
+
+.moveTexts {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  width: 80%;  
+}
+
+.moveTexts > p {
+  padding: 3px;
+  margin: auto;
+  white-space: normal;
 }

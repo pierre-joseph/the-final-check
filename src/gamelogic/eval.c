@@ -20,7 +20,7 @@ const int KING_WEIGHT = 0;
 const int MAX_MATERIAL = 16 * PAWN_WEIGHT + 8 * KNIGHT_WEIGHT + 4 * ROOK_WEIGHT + 2 * QUEEN_WEIGHT;
 const int MAX_PHASE = 24;
 int searched;
-int tts;
+int transposition_positions;
 
 int PAWN_PST[64] = {
     0,  0,  0,  0,  0,  0,  0,  0,
@@ -305,12 +305,13 @@ int search_all_captures(int alpha, int beta, int cur_depth){
     order_moves(all_moves);
     int move_count = all_moves->count;
 
-    if (move_count == 0){
+    int game_over = is_game_over();
+    if (game_over != 0){
         int score;
-        if (is_king_attacked(maximizing_player)){
-            score = maximizing_player ? INT_MIN + cur_depth : INT_MAX - cur_depth;
-        } else {
+        if (game_over == 1){
             score = 0;
+        } else {
+            score = maximizing_player ? INT_MIN + cur_depth : INT_MAX - cur_depth;
         }
         free(all_moves);
         return score;
@@ -326,7 +327,7 @@ int search_all_captures(int alpha, int beta, int cur_depth){
             int eval;
 
             if (entry && entry->depth >= 4 - cur_depth){
-                tts++;
+                transposition_positions++;
                 eval = entry->eval;
             } else {
                 eval = search_all_captures(alpha, beta, cur_depth + 1);
@@ -362,12 +363,13 @@ int get_move_eval(int depth, int alpha, int beta){
     order_moves(all_moves);
     int move_count = all_moves->count;
 
-    if (move_count == 0){
+    int game_over = is_game_over();
+    if (game_over != 0){
         int score;
-        if (is_king_attacked(maximizing_player)){
-            score = maximizing_player ? INT_MIN + (10 - depth) : INT_MAX - (10 - depth);
-        } else {
+        if (game_over == 1){
             score = 0;
+        } else {
+            score = maximizing_player ? INT_MIN + (10 - depth) : INT_MAX - (10 - depth);
         }
         free(all_moves);
         return score;
@@ -380,7 +382,7 @@ int get_move_eval(int depth, int alpha, int beta){
         int eval;
 
         if (entry && entry->depth >= depth){
-            tts++;
+            transposition_positions++;
             eval = entry->eval;
         } else {
             eval = get_move_eval(depth - 1, alpha, beta);
@@ -409,7 +411,7 @@ Move get_best_move(int depth){
     start = clock();
 
     searched = 0;
-    tts = 0;
+    transposition_positions = 0;
     MoveList *all_moves = find_possible_board_moves();
     order_moves(all_moves);
     Move best_move = all_moves->moves[0];
@@ -446,7 +448,7 @@ Move get_best_move(int depth){
 
     printf("Cur Evaluation: %.2f\n", maximizing_player ? (float) alpha / PAWN_WEIGHT : (float) beta / PAWN_WEIGHT);
     printf("Positions Searched: %d\n", searched);
-    printf("Transpositions: %d\n", tts);
+    printf("Transpositions: %d\n", transposition_positions);
     printf("Move evaluation took %.2f seconds\n", cpu_time_used);
     return best_move;
 }

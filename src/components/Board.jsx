@@ -8,6 +8,7 @@ import FlipBoard from "./FlipBoard";
 import StartGame from "./StartGame";
 import ChooseColor from "./ChooseColor";
 import TurnDisplay from "./TurnDisplay";
+import MovePanel from "./MovePanel";
 
 export default function Board(props) {
   const [state, setState] = useState({
@@ -32,6 +33,8 @@ export default function Board(props) {
     AIFuncRandom: null,
     AIFuncBest: null,
     makingAIMove: false,
+    moveList: [],
+    moveNotationFunc: null
   });
 
   useEffect(() => {
@@ -53,6 +56,7 @@ export default function Board(props) {
       const setGameOverFunc = Module.cwrap("is_game_over", "number", []);
       const setAIFuncRandom = Module.cwrap("get_random_move", "number", []);
       const setAIFuncBest = Module.cwrap("get_best_move", "number", ["number"]);
+      const setMoveNotationFunc = Module.cwrap("get_move_notation", "string", ["number"]);
 
       setState((prevState) => {
         return {
@@ -65,6 +69,7 @@ export default function Board(props) {
           gameOverFunc: setGameOverFunc,
           AIFuncRandom: setAIFuncRandom,
           AIFuncBest: setAIFuncBest,
+          moveNotationFunc: setMoveNotationFunc
         };
       });
     });
@@ -143,15 +148,6 @@ export default function Board(props) {
     makeMoveHelper(move_vars.from, move_vars.to, move_vars.promote);
   }
 
-  function makeMoveInC(from, to, promoteTo) {
-    const curMove = state.boardPossibleMoves.find(
-      (move) =>
-        move.from === from && move.to === to && move.promote === promoteTo
-    );
-    const newfen = state.makeMove(curMove.full_move);
-    return newfen;
-  }
-
   function getMovesFromC(newMovesPtr, mod) {
     const MAX_MOVES = 256;
     const MOVE_SIZE = 4;
@@ -177,7 +173,12 @@ export default function Board(props) {
   }
 
   function makeMoveHelper(from, to, promote) {
-    const newfen = makeMoveInC(from, to, promote, state.Module);
+    const curMove = state.boardPossibleMoves.find(
+      (move) =>
+        move.from === from && move.to === to && move.promote === promote
+    );
+    const moveNotation = state.moveNotationFunc(curMove.full_move);
+    const newfen = state.makeMove(curMove.full_move);;
     const newMovesPtr = state.getPossibleMoves();
     const moves = getMovesFromC(newMovesPtr, state.Module);
     const newResult = state.gameOverFunc();
@@ -191,6 +192,7 @@ export default function Board(props) {
       boardPossibleMoves: moves,
       result: newResult,
       makingAIMove: false,
+      moveList: [...prevState.moveList, moveNotation]
     }));
   }
 
@@ -292,6 +294,9 @@ export default function Board(props) {
             isOn={state.flipBoard}
           />
         )}
+      
+      {(state.gameType == "human" || state.aiIsWhite != null) &&
+        state.result == 0 && <MovePanel moveList={state.moveList} />}
 
       {(state.gameType == "human" || state.aiIsWhite != null) &&
         state.result == 0 && <TurnDisplay isWhite={state.isWhite} />}

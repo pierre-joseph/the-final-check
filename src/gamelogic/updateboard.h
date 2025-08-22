@@ -64,7 +64,7 @@ typedef struct {
     int en_passant;
     MoveList all_moves;
     int halfmove_clock;         
-    int fullmove_number;  
+    int move_count;  
     uint64_t hash; 
 } Position;
 extern Position global_position;
@@ -83,6 +83,7 @@ typedef struct {
 #define MAX_DEPTH 512
 extern UndoInfo pos_stack[MAX_DEPTH];
 extern int stack_top;
+extern uint64_t game_hashes[MAX_DEPTH];
 
 void print_bitboard(Bitboard bb);
 void start_game(char* fen, bool white_turn, char* can_castle);
@@ -91,7 +92,8 @@ void make_board_move(Move move);
 void unmake_board_move(Move move);
 bool is_square_attacked(int king_pos, bool white_attack);
 bool is_move_legal(Move cur_move, bool white_turn);
-bool is_king_attacked(bool white_turn); 
+bool is_king_attacked(bool white_turn);
 int count_set_bits(Bitboard n);
+int is_game_over();
 
 #endif
