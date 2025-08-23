@@ -176,7 +176,7 @@ header > img {
   left: 38px;
 }
 
-.flipText {
+.flipText, .replayText {
   font-family: Inter;
   color: #B58863;
   font-weight: 600;
@@ -215,7 +215,7 @@ header > img {
 .movePanel {
   position: absolute;
   left: 10%;
-  top: 45%;
+  top: 35%;
   display: flex;
   flex-direction: column;
   width: 200px;
@@ -245,4 +245,44 @@ header > img {
   padding: 3px;
   margin: auto;
   white-space: normal;
+}
+
+/* replayPanel Styling */
+.replayPanel {
+  position: absolute;
+  left: 10%;
+  top: 75%;
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  height: 150px;
+  align-items: center;
+}
+
+.replayButtons {
+  display: flex;
+  flex-direction: row;
+  width: 150px;
+  height: 75px;
+  align-items: center;
+  justify-content: center;
+  background-color: #B58863;
+  font-family: Inter;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 35px;
+  color: #FFFDD0;
+}
+
+.replayButtons > button {
+  all: unset; 
+  background-color: #B58863;
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.replayButtons > span {
+  font-weight: 300;
 }

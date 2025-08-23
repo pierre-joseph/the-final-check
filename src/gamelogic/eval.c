@@ -9,7 +9,6 @@
 #include <limits.h>
 #include <time.h>
 
-
 TTEntry transposition_table[1 << 20];
 const int PAWN_WEIGHT = 200;
 const int KNIGHT_WEIGHT = 600;

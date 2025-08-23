@@ -59,10 +59,11 @@ export default function Square(props) {
 
   function getSqBackgroundColor() {
     if (
+      props.result == 0 &&
       props.isKingAttacked &&
       props.value != null &&
       props.value.type == "k" &&
-      props.isKingAttacked(props.value.iswhite)
+      props.isKingAttacked(props.value.iswhite) 
     ) {
       return "#E63946";
     } else if (props.isSelected) {

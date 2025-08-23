@@ -9,12 +9,15 @@ import StartGame from "./StartGame";
 import ChooseColor from "./ChooseColor";
 import TurnDisplay from "./TurnDisplay";
 import MovePanel from "./MovePanel";
+import ReplayPanel from "./ReplayPanel";
 
 export default function Board(props) {
   const [state, setState] = useState({
     Module: null,
     board: convertFENToBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"),
     fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
+    fenList: ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"],
+    moveIdx: 0,
     canCastle: "KQkq",
     makeMove: null,
     squareElements: null,
@@ -33,8 +36,8 @@ export default function Board(props) {
     AIFuncRandom: null,
     AIFuncBest: null,
     makingAIMove: false,
+    moveNotationFunc: null,
     moveList: [],
-    moveNotationFunc: null
   });
 
   useEffect(() => {
@@ -56,7 +59,9 @@ export default function Board(props) {
       const setGameOverFunc = Module.cwrap("is_game_over", "number", []);
       const setAIFuncRandom = Module.cwrap("get_random_move", "number", []);
       const setAIFuncBest = Module.cwrap("get_best_move", "number", ["number"]);
-      const setMoveNotationFunc = Module.cwrap("get_move_notation", "string", ["number"]);
+      const setMoveNotationFunc = Module.cwrap("get_move_notation", "string", [
+        "number",
+      ]);
 
       setState((prevState) => {
         return {
@@ -69,7 +74,7 @@ export default function Board(props) {
           gameOverFunc: setGameOverFunc,
           AIFuncRandom: setAIFuncRandom,
           AIFuncBest: setAIFuncBest,
-          moveNotationFunc: setMoveNotationFunc
+          moveNotationFunc: setMoveNotationFunc,
         };
       });
     });
@@ -79,7 +84,8 @@ export default function Board(props) {
     if (
       state.gameType == "bot" &&
       state.result == 0 &&
-      state.isWhite == state.aiIsWhite
+      state.isWhite == state.aiIsWhite &&
+      state.moveIdx == state.fenList.length - 1
     ) {
       setState((prevState) => ({
         ...prevState,
@@ -97,6 +103,7 @@ export default function Board(props) {
   function toggleBoard(row, col) {
     const curSq = (7 - row) * 8 + (7 - col);
     if (
+      state.moveIdx == state.fenList.length - 1 &&
       state.squareSelected != null &&
       state.boardPossibleMoves.some(
         (move) => move.from == state.squareSelected && move.to == curSq
@@ -119,7 +126,7 @@ export default function Board(props) {
         return;
       }
       makeMoveHelper(state.squareSelected, curSq, 0);
-    } else {
+    } else if (state.moveIdx == state.fenList.length - 1) {
       setState((prevState) => {
         return { ...prevState, squareSelected: curSq };
       });
@@ -174,11 +181,10 @@ export default function Board(props) {
 
   function makeMoveHelper(from, to, promote) {
     const curMove = state.boardPossibleMoves.find(
-      (move) =>
-        move.from === from && move.to === to && move.promote === promote
+      (move) => move.from === from && move.to === to && move.promote === promote
     );
     const moveNotation = state.moveNotationFunc(curMove.full_move);
-    const newfen = state.makeMove(curMove.full_move);;
+    const newfen = state.makeMove(curMove.full_move);
     const newMovesPtr = state.getPossibleMoves();
     const moves = getMovesFromC(newMovesPtr, state.Module);
     const newResult = state.gameOverFunc();
@@ -187,13 +193,49 @@ export default function Board(props) {
       ...prevState,
       squareSelected: null,
       fen: newfen,
+      fenList: [...prevState.fenList, newfen],
+      moveIdx: prevState.moveIdx + 1,
       board: convertFENToBoard(newfen),
       isWhite: !prevState.isWhite,
       boardPossibleMoves: moves,
       result: newResult,
       makingAIMove: false,
-      moveList: [...prevState.moveList, moveNotation]
+      moveList: [...prevState.moveList, moveNotation],
     }));
+  }
+
+  function changeAppearingPosition(moveShift) {
+    if (
+      (moveShift == -1 && state.moveIdx >= 0) ||
+      (moveShift == 1 && state.moveIdx < state.fenList.length - 1)
+    ) {
+      const newIdx = state.moveIdx + moveShift;
+      const newfen = state.fenList[newIdx];
+      setState((prevState) => ({
+        ...prevState,
+        squareSelected: null,
+        fen: newfen,
+        board: convertFENToBoard(newfen),
+        moveIdx: newIdx,
+      }));
+    }
+  }
+
+  async function rewatchGame() {
+    const newIdx = state.moveIdx + 1;
+    const newfen = state.fenList[newIdx];
+    await sleep(500);
+    setState((prevState) => ({
+      ...prevState,
+      squareSelected: null,
+      fen: newfen,
+      board: convertFENToBoard(newfen),
+      moveIdx: newIdx,
+    }));
+  }
+
+  if (state.result != 0 && state.moveIdx != state.fenList.length - 1) {
+    rewatchGame();
   }
 
   const squareElements = state.board.map((rank, rowNum) =>
@@ -216,6 +258,7 @@ export default function Board(props) {
         }
         isKingAttacked={state.kingAttackedFunc}
         flipped={state.flipBoard}
+        result={state.result}
       />
     ))
   );
@@ -274,11 +317,39 @@ export default function Board(props) {
             })
           }
         />
+      )} 
+
+      {state.result != 0 && state.moveIdx == state.fenList.length - 1 && (
+        <GameOver
+          winner={state.result}
+          restart={props.restart}
+          rewatch={() => {
+            const newfen = state.fenList[0];
+            setState((prevState) => {
+              return {
+                ...prevState,
+                squareSelected: null,
+                fen: newfen,
+                board: convertFENToBoard(newfen),
+                moveIdx: 0,
+              };
+            });
+          }}
+        />
       )}
 
-      {state.result != 0 && (
-        <GameOver winner={state.result} restart={props.restart} />
-      )}
+      {(state.gameType == "human" || state.aiIsWhite != null) &&
+        state.result == 0 && <MovePanel moveList={state.moveList} />}
+
+      {(state.gameType == "human" || state.aiIsWhite != null) &&
+        state.result == 0 && (
+          <ReplayPanel
+            onClick={(moveShift) => changeAppearingPosition(moveShift)}
+          />
+        )}
+
+      {(state.gameType == "human" || state.aiIsWhite != null) &&
+        state.result == 0 && <TurnDisplay isWhite={state.isWhite} />}
 
       {(state.gameType == "human" || state.aiIsWhite != null) &&
         state.result == 0 && (
@@ -294,12 +365,6 @@ export default function Board(props) {
             isOn={state.flipBoard}
           />
         )}
-      
-      {(state.gameType == "human" || state.aiIsWhite != null) &&
-        state.result == 0 && <MovePanel moveList={state.moveList} />}
-
-      {(state.gameType == "human" || state.aiIsWhite != null) &&
-        state.result == 0 && <TurnDisplay isWhite={state.isWhite} />}
     </main>
   );
 }
@@ -333,4 +398,8 @@ function convertFENToBoard(fen) {
   }
   board.push(curRank);
   return board;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
