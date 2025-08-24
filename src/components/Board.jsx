@@ -206,7 +206,7 @@ export default function Board(props) {
 
   function changeAppearingPosition(moveShift) {
     if (
-      (moveShift == -1 && state.moveIdx >= 0) ||
+      (moveShift == -1 && state.moveIdx > 0) ||
       (moveShift == 1 && state.moveIdx < state.fenList.length - 1)
     ) {
       const newIdx = state.moveIdx + moveShift;

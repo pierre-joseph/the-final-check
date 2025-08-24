@@ -7,7 +7,7 @@ main {
 /* body styling */
 body {
   margin: 0%;
-  background-color: #FFFDD0;
+  background-color: #EDE6D6;
 }
 
 /* header styling */
@@ -23,7 +23,7 @@ header {
 header > span {
   color: #FFFDD0;
   font-family: Inter;
-  font-weight: 400;
+  font-weight: 400; 
   font-size: 25px;
 }
 
@@ -156,7 +156,7 @@ header > img {
 }
 
 .flipButton.on {
-  background-color: lightgoldenrodyellow;
+  background-color: #FFFDD0;
 }
 
 .flipCircle {
@@ -226,7 +226,7 @@ header > img {
 
   font-family: Inter;
   font-weight: 500;
-  color: #FFFDD0;
+  color: white;
   overflow: auto; 
 }
 
@@ -271,7 +271,7 @@ header > img {
   border-radius: 20px;
   font-weight: 500;
   font-size: 35px;
-  color: #FFFDD0;
+  color: white;
 }
 
 .replayButtons > button {

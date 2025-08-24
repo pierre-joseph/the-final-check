@@ -112,7 +112,7 @@ const char* get_move_notation(Move move){
         static_move_notation[1] = '-';
         static_move_notation[2] = 'O';
         notation_idx = 3;
-        if (abs(from - to) == 3){
+        if (to > from){
             static_move_notation[3] = '-';
             static_move_notation[4] = 'O';
             notation_idx = 5;

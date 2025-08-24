@@ -250,17 +250,17 @@ void order_moves(MoveList* all_moves){
     qsort(all_moves->moves, move_count, sizeof(uint32_t), compare_moves);
 }
 
-TTEntry* probe_tt(uint64_t hash, int depth, int alpha_orig, int beta_orig) {
+TTEntry* probe_tt(uint64_t hash, int depth, int alpha, int beta) {
     TTEntry *entry = &transposition_table[TT_INDEX(hash)];
     if (entry->key == hash && entry->depth >= depth) {
         switch (entry->flag) {
             case 1:
                 return entry;  
             case 2:
-                if (entry->eval >= beta_orig) return entry; 
+                if (entry->eval >= beta) return entry; 
                 break;
             case 3:
-                if (entry->eval <= alpha_orig) return entry; 
+                if (entry->eval <= alpha) return entry; 
                 break;
         }
     }
@@ -268,27 +268,26 @@ TTEntry* probe_tt(uint64_t hash, int depth, int alpha_orig, int beta_orig) {
     return NULL; 
 }
 
-void store_tt(uint64_t hash, int depth, int eval, int alpha_orig, int beta_orig) {
+void store_tt(uint64_t hash, int depth, int eval, int alpha, int beta) {
     int flag = 1;
-    if (eval >= beta_orig) {
+    if (eval >= beta) {
         flag = 2;
-    } else if (eval <= alpha_orig) {
+    } else if (eval <= alpha) {
         flag = 3;
     }
 
     TTEntry *entry = &transposition_table[TT_INDEX(hash)];
-    entry->key = hash;
-    entry->depth = depth;
-    entry->eval = eval;
-    entry->flag = flag;
+    if (depth >= entry->depth) {
+        entry->key = hash;
+        entry->depth = depth;
+        entry->eval = eval;
+        entry->flag = flag;
+    }
 }
 
 int search_all_captures(int alpha, int beta, int cur_depth){
     bool maximizing_player = global_position.white_turn;
     int cur_eval = eval_position();
-
-    int alpha_orig = alpha;
-    int beta_orig = beta;
 
     if (maximizing_player){
         if (cur_eval > alpha) alpha = cur_eval;
@@ -297,8 +296,6 @@ int search_all_captures(int alpha, int beta, int cur_depth){
         if (cur_eval < beta) beta = cur_eval;
         if (cur_eval <= alpha) return alpha;
     }
-
-    if (cur_depth >= 10) return maximizing_player ? alpha : beta;
 
     MoveList* all_moves = find_possible_board_moves();
     order_moves(all_moves);
@@ -318,11 +315,12 @@ int search_all_captures(int alpha, int beta, int cur_depth){
 
     for (int i = 0; i < move_count; i++){
         int cur_type = MOVE_FLAGS(all_moves->moves[i]);
+        
         if (cur_type == 1 || cur_type == 2 || cur_type == 4){
             make_board_move(all_moves->moves[i]);
             searched++;
 
-            TTEntry *entry = probe_tt(global_position.hash, 4 - cur_depth, alpha_orig, beta_orig);
+            TTEntry *entry = probe_tt(global_position.hash, 4 - cur_depth, alpha, beta);
             int eval;
 
             if (entry && entry->depth >= 4 - cur_depth){
@@ -330,7 +328,7 @@ int search_all_captures(int alpha, int beta, int cur_depth){
                 eval = entry->eval;
             } else {
                 eval = search_all_captures(alpha, beta, cur_depth + 1);
-                store_tt(global_position.hash, cur_depth, eval, alpha_orig, beta_orig);
+                store_tt(global_position.hash, 4 - cur_depth, eval, alpha, beta);
             }
 
             unmake_board_move(all_moves->moves[i]);
@@ -377,7 +375,7 @@ int get_move_eval(int depth, int alpha, int beta){
     for (int i = 0; i < move_count; i++){
         make_board_move(all_moves->moves[i]);
         searched++;
-        TTEntry *entry = probe_tt(global_position.hash, depth, alpha_orig, beta_orig);
+        TTEntry *entry = probe_tt(global_position.hash, depth, alpha, beta);
         int eval;
 
         if (entry && entry->depth >= depth){
@@ -385,7 +383,7 @@ int get_move_eval(int depth, int alpha, int beta){
             eval = entry->eval;
         } else {
             eval = get_move_eval(depth - 1, alpha, beta);
-            store_tt(global_position.hash, depth, eval, alpha_orig, beta_orig);
+            store_tt(global_position.hash, depth, eval, alpha, beta);
         }
 
         unmake_board_move(all_moves->moves[i]);
@@ -426,18 +424,12 @@ Move get_best_move(int depth){
         int eval = get_move_eval(depth - 1, alpha, beta);
         unmake_board_move(all_moves->moves[i]);
 
-        if (maximizing_player){
-            if (eval > alpha){
-                alpha = eval;
-                best_move = all_moves->moves[i];
-            }
-            if (alpha >= beta) break;
+        if (maximizing_player && eval > alpha){
+            alpha = eval;
+            best_move = all_moves->moves[i];
         } else if (!maximizing_player && eval < beta) {
-            if (eval < beta){
-                beta = eval;
-                best_move = all_moves->moves[i];
-            }
-            if (beta <= alpha) break;
+            beta = eval;
+            best_move = all_moves->moves[i];
         }
     }
 
@@ -450,29 +442,4 @@ Move get_best_move(int depth){
     printf("Transpositions: %d\n", transposition_positions);
     printf("Move evaluation took %.2f seconds\n", cpu_time_used);
     return best_move;
-}
-
-int num_of_positions(int depth){
-    if (depth == 0){
-        return 1;
-    }
-
-    int positions = 0;
-    MoveList* all_moves = find_possible_board_moves();
-    int move_count = all_moves->count;
-    for (int i = 0; i < move_count; i++){
-        make_board_move(all_moves->moves[i]);
-        int additional_positions = num_of_positions(depth - 1);
-        positions += additional_positions;
-        unmake_board_move(all_moves->moves[i]);
-    }
-
-    free(all_moves);
-    return positions;
-}
-
-
-int move_generation_test(int depth, char* fen, bool white_turn, char* can_castle_str, int can_en_passant){
-    start_game(fen, white_turn, can_castle_str);
-    return num_of_positions(depth);
 }

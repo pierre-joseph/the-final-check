@@ -1,6 +1,7 @@
 #include "../../Unity/src/unity.h"
-#include "eval.h"
+#include "updateboard.h"
 #include <stdbool.h>
+#include <stdlib.h>
 
 void setUp(void) {
  
@@ -8,6 +9,31 @@ void setUp(void) {
 
 void tearDown(void) {
 
+}
+
+int num_of_positions(int depth){
+    if (depth == 0){
+        return 1;
+    }
+
+    int positions = 0;
+    MoveList* all_moves = find_possible_board_moves();
+    int move_count = all_moves->count;
+    for (int i = 0; i < move_count; i++){
+        make_board_move(all_moves->moves[i]);
+        int additional_positions = num_of_positions(depth - 1);
+        positions += additional_positions;
+        unmake_board_move(all_moves->moves[i]);
+    }
+
+    free(all_moves);
+    return positions;
+}
+
+
+int move_generation_test(int depth, char* fen, bool white_turn, char* can_castle_str, int can_en_passant){
+    start_game(fen, white_turn, can_castle_str);
+    return num_of_positions(depth);
 }
 
 void starting_board(void) {

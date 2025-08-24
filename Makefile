@@ -22,5 +22,5 @@ clean:
 
 test: 
 	gcc -g -fsanitize=address -fno-omit-frame-pointer Unity/src/unity.c src/gamelogic/test_moves.c \
-    src/gamelogic/eval.c src/gamelogic/updateboard.c src/gamelogic/movegen.c \
+    src/gamelogic/updateboard.c src/gamelogic/movegen.c \
     src/gamelogic/fen.c -o test_moves
