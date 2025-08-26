@@ -38,6 +38,7 @@ export default function Board(props) {
     makingAIMove: false,
     moveNotationFunc: null,
     moveList: [],
+    isDesktop: window.innerWidth >= 1024
   });
 
   useEffect(() => {
@@ -79,6 +80,19 @@ export default function Board(props) {
       });
     });
   }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setState((prevState) => ({
+        ...prevState,
+        isDesktop: window.innerWidth >= 1024,
+      }));
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
 
   useEffect(() => {
     if (
@@ -338,20 +352,20 @@ export default function Board(props) {
         />
       )}
 
-      {(state.gameType == "human" || state.aiIsWhite != null) &&
+      {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
         state.result == 0 && <MovePanel moveList={state.moveList} />}
 
-      {(state.gameType == "human" || state.aiIsWhite != null) &&
+      {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
         state.result == 0 && (
           <ReplayPanel
             onClick={(moveShift) => changeAppearingPosition(moveShift)}
           />
         )}
 
-      {(state.gameType == "human" || state.aiIsWhite != null) &&
+      {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
         state.result == 0 && <TurnDisplay isWhite={state.isWhite} />}
 
-      {(state.gameType == "human" || state.aiIsWhite != null) &&
+      {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
         state.result == 0 && (
           <FlipBoard
             flip={() =>

@@ -285,7 +285,7 @@ void store_tt(uint64_t hash, int depth, int eval, int alpha, int beta) {
     }
 }
 
-int search_all_captures(int alpha, int beta, int cur_depth){
+int search_all_threats(int cur_depth, int alpha, int beta){
     bool maximizing_player = global_position.white_turn;
     int cur_eval = eval_position();
 
@@ -307,7 +307,7 @@ int search_all_captures(int alpha, int beta, int cur_depth){
         if (game_over == 1){
             score = 0;
         } else {
-            score = maximizing_player ? INT_MIN + cur_depth : INT_MAX - cur_depth;
+            score = maximizing_player ? -100000 + cur_depth : 100000 - cur_depth;
         }
         free(all_moves);
         return score;
@@ -315,20 +315,20 @@ int search_all_captures(int alpha, int beta, int cur_depth){
 
     for (int i = 0; i < move_count; i++){
         int cur_type = MOVE_FLAGS(all_moves->moves[i]);
-        
-        if (cur_type == 1 || cur_type == 2 || cur_type == 4){
-            make_board_move(all_moves->moves[i]);
+        make_board_move(all_moves->moves[i]);
+
+        if (cur_type == 1 || cur_type == 2 || cur_type == 4 || is_king_attacked(global_position.white_turn)){
             searched++;
 
-            TTEntry *entry = probe_tt(global_position.hash, 4 - cur_depth, alpha, beta);
+            TTEntry *entry = probe_tt(global_position.hash, cur_depth, alpha, beta);
             int eval;
 
-            if (entry && entry->depth >= 4 - cur_depth){
+            if (entry && entry->depth >= cur_depth){
                 transposition_positions++;
                 eval = entry->eval;
             } else {
-                eval = search_all_captures(alpha, beta, cur_depth + 1);
-                store_tt(global_position.hash, 4 - cur_depth, eval, alpha, beta);
+                eval = search_all_threats(cur_depth - 1, alpha, beta);
+                store_tt(global_position.hash, cur_depth, eval, alpha, beta);
             }
 
             unmake_board_move(all_moves->moves[i]);
@@ -340,6 +340,8 @@ int search_all_captures(int alpha, int beta, int cur_depth){
                 if (eval < beta) beta = eval;
                 if (beta <= alpha) break;
             }
+        } else {
+            unmake_board_move(all_moves->moves[i]);
         }
     }
 
@@ -349,12 +351,10 @@ int search_all_captures(int alpha, int beta, int cur_depth){
 
 int get_move_eval(int depth, int alpha, int beta){
     if (depth == 0){
-        return search_all_captures(alpha, beta, 4); 
+        return search_all_threats(depth, alpha, beta); 
     }
 
     bool maximizing_player = global_position.white_turn;
-    int alpha_orig = alpha;
-    int beta_orig = beta;
 
     MoveList* all_moves = find_possible_board_moves();
     order_moves(all_moves);
@@ -366,7 +366,7 @@ int get_move_eval(int depth, int alpha, int beta){
         if (game_over == 1){
             score = 0;
         } else {
-            score = maximizing_player ? INT_MIN + (10 - depth) : INT_MAX - (10 - depth);
+            score = maximizing_player ? -100000 - depth : 100000 + depth;
         }
         free(all_moves);
         return score;
@@ -415,8 +415,8 @@ Move get_best_move(int depth){
     int move_count = all_moves->count;
 
     bool maximizing_player = global_position.white_turn;
-    int alpha = INT_MIN;
-    int beta = INT_MAX;
+    int alpha = -100000;
+    int beta = 100000;
 
     for (int i = 0; i < move_count; i++){
         make_board_move(all_moves->moves[i]);
