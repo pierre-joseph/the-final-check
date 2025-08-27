@@ -286,6 +286,7 @@ void store_tt(uint64_t hash, int depth, int eval, int alpha, int beta) {
 }
 
 int search_all_threats(int cur_depth, int alpha, int beta){
+    searched++;
     bool maximizing_player = global_position.white_turn;
     int cur_eval = eval_position();
 
@@ -318,8 +319,6 @@ int search_all_threats(int cur_depth, int alpha, int beta){
         make_board_move(all_moves->moves[i]);
 
         if (cur_type == 1 || cur_type == 2 || cur_type == 4 || is_king_attacked(global_position.white_turn)){
-            searched++;
-
             TTEntry *entry = probe_tt(global_position.hash, cur_depth, alpha, beta);
             int eval;
 
@@ -350,6 +349,7 @@ int search_all_threats(int cur_depth, int alpha, int beta){
 }
 
 int get_move_eval(int depth, int alpha, int beta){
+    searched++;
     if (depth == 0){
         return search_all_threats(depth, alpha, beta); 
     }
@@ -374,7 +374,6 @@ int get_move_eval(int depth, int alpha, int beta){
 
     for (int i = 0; i < move_count; i++){
         make_board_move(all_moves->moves[i]);
-        searched++;
         TTEntry *entry = probe_tt(global_position.hash, depth, alpha, beta);
         int eval;
 
