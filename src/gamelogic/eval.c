@@ -251,8 +251,8 @@ void order_moves(MoveList* all_moves){
 }
 
 TTEntry* probe_tt(uint64_t hash, int depth, int alpha, int beta) {
-    TTEntry *entry = &transposition_table[TT_INDEX(hash)];
-    if (entry->key == hash && entry->depth >= depth) {
+    TTEntry* entry = &transposition_table[TT_INDEX(hash)];
+    if (entry->key == hash && entry->depth <= depth) {
         switch (entry->flag) {
             case 1:
                 return entry;  
@@ -276,8 +276,8 @@ void store_tt(uint64_t hash, int depth, int eval, int alpha, int beta) {
         flag = 3;
     }
 
-    TTEntry *entry = &transposition_table[TT_INDEX(hash)];
-    if (depth >= entry->depth) {
+    TTEntry* entry = &transposition_table[TT_INDEX(hash)];
+    if (entry->key != hash || depth <= entry->depth) {
         entry->key = hash;
         entry->depth = depth;
         entry->eval = eval;
@@ -322,7 +322,7 @@ int search_all_threats(int cur_depth, int alpha, int beta){
             TTEntry *entry = probe_tt(global_position.hash, cur_depth, alpha, beta);
             int eval;
 
-            if (entry && entry->depth >= cur_depth){
+            if (entry){
                 transposition_positions++;
                 eval = entry->eval;
             } else {
@@ -377,7 +377,7 @@ int get_move_eval(int depth, int alpha, int beta){
         TTEntry *entry = probe_tt(global_position.hash, depth, alpha, beta);
         int eval;
 
-        if (entry && entry->depth >= depth){
+        if (entry){
             transposition_positions++;
             eval = entry->eval;
         } else {
