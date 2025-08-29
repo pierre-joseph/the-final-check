@@ -107,7 +107,7 @@ const char* get_move_notation(Move move){
 
     char* abcdefgh = "abcdefgh";
 
-    if (type == 3){
+    if (type == CAPTURE_FLAG){
         static_move_notation[0] = 'O';
         static_move_notation[1] = '-';
         static_move_notation[2] = 'O';
@@ -136,14 +136,14 @@ const char* get_move_notation(Move move){
         notation_idx += 2;
     }
 
-    if (type == 4) {
+    if (type == PROMOTION_FLAG) {
         static_move_notation[notation_idx] = '=';
         static_move_notation[notation_idx + 1] = global_position.board_pieces.pieces[promote].type;
         notation_idx += 2;
     }
 
     make_board_move(move);
-    if (is_game_over() == 2 || is_game_over() == 3){
+    if (is_game_over() == WHITE_WIN || is_game_over() == BLACK_WIN){
         static_move_notation[notation_idx] = '#';
         notation_idx++;
     } else if (is_king_attacked(global_position.white_turn)){

@@ -16,8 +16,12 @@ const int BISHOP_WEIGHT = 600;
 const int ROOK_WEIGHT = 1000;
 const int QUEEN_WEIGHT = 1800;
 const int KING_WEIGHT = 0;
-const int MAX_MATERIAL = 16 * PAWN_WEIGHT + 8 * KNIGHT_WEIGHT + 4 * ROOK_WEIGHT + 2 * QUEEN_WEIGHT;
+
 const int MAX_PHASE = 24;
+enum { KNIGHT_BISHOP_PHASE_CONTRIBUTION = 1, ROOK_PHASE_CONTRIBUTION = 2, QUEEN_PHASE_CONTRIBUTION = 4};
+
+enum { MIN_ALPHA = -100000, MAX_BETA = 100000 };
+
 int searched;
 int transposition_positions;
 
@@ -125,19 +129,21 @@ Move get_random_move(){
 int eval_position(){
     int white_material = 0;
     int black_material = 0;
-    int cur_phase = MAX_PHASE;
+    
     int white_pieces_eval = 0;
     int black_pieces_eval = 0;
 
+    int cur_phase = MAX_PHASE;
+    
     for (int sq = 0; sq < 64; sq++){
         for (int i = 1; i < 5; i++){
             if (GET_BIT(global_position.board_pieces.pieces[i].bb, sq) == 1ULL){
-                if (i == 1){
-                    cur_phase -= 2;
-                } else if (i == 2 || i == 3){
-                    cur_phase -= 1;
-                } else if (i == 4){
-                    cur_phase -= 4;
+                if (i == KNIGHT || i == BISHOP){
+                    cur_phase -= KNIGHT_BISHOP_PHASE_CONTRIBUTION;
+                } else if (i == ROOK){
+                    cur_phase -= ROOK_PHASE_CONTRIBUTION;
+                } else if (i == QUEEN){
+                    cur_phase -= QUEEN_PHASE_CONTRIBUTION;
                 }
 
                 white_material += piece_weights[i];
@@ -145,12 +151,12 @@ int eval_position(){
                 white_pieces_eval += (*psts)[i][sq];
                 break;
             } else if (GET_BIT(global_position.board_pieces.pieces[i + 6].bb, sq) == 1ULL){
-                if (i == 1){
-                    cur_phase -= 2;
-                } else if (i == 2 || i == 3){
-                    cur_phase -= 1;
-                } else if (i == 4){
-                    cur_phase -= 4;
+                if (i == KNIGHT || i == BISHOP){
+                    cur_phase -= KNIGHT_BISHOP_PHASE_CONTRIBUTION;
+                } else if (i == ROOK){
+                    cur_phase -= ROOK_PHASE_CONTRIBUTION;
+                } else if (i == QUEEN){
+                    cur_phase -= QUEEN_PHASE_CONTRIBUTION;
                 }
 
                 black_material += piece_weights[i];
@@ -162,27 +168,27 @@ int eval_position(){
     }
 
     for (int sq = 0; sq < 64; sq++){
-        if (GET_BIT(global_position.board_pieces.pieces[0].bb, sq) == 1ULL){
-            white_material += piece_weights[0];
-            white_pieces_eval += piece_weights[0];
-            white_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[0][sq] \
-            + (cur_phase) * (*endgame_psts)[0][sq]) / MAX_PHASE);
-        } else if (GET_BIT(global_position.board_pieces.pieces[6].bb, sq) == 1ULL){
-            black_material += piece_weights[0];
-            black_pieces_eval += piece_weights[0];
-            black_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[0][63 - sq] \
-            + (cur_phase) * (*endgame_psts)[0][63 - sq]) / MAX_PHASE);
-        } else if (GET_BIT(global_position.board_pieces.pieces[5].bb, sq) == 1ULL){
-            white_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[5][sq] \
-            + (cur_phase) * (*endgame_psts)[5][sq]) / MAX_PHASE);
-        } else if (GET_BIT(global_position.board_pieces.pieces[11].bb, sq) == 1ULL){
-            black_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[5][63 - sq] \
-            + (cur_phase) * (*endgame_psts)[5][63 - sq]) / MAX_PHASE);
+        if (GET_BIT(global_position.board_pieces.pieces[WHITE_PAWN].bb, sq) == 1ULL){
+            white_material += piece_weights[PAWN];
+            white_pieces_eval += piece_weights[PAWN];
+            white_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[PAWN][sq] \
+            + (cur_phase) * (*endgame_psts)[PAWN][sq]) / MAX_PHASE);
+        } else if (GET_BIT(global_position.board_pieces.pieces[BLACK_PAWN].bb, sq) == 1ULL){
+            black_material += piece_weights[PAWN];
+            black_pieces_eval += piece_weights[PAWN];
+            black_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[PAWN][63 - sq] \
+            + (cur_phase) * (*endgame_psts)[PAWN][63 - sq]) / MAX_PHASE);
+        } else if (GET_BIT(global_position.board_pieces.pieces[WHITE_KING].bb, sq) == 1ULL){
+            white_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[KING][sq] \
+            + (cur_phase) * (*endgame_psts)[KING][sq]) / MAX_PHASE);
+        } else if (GET_BIT(global_position.board_pieces.pieces[BLACK_KING].bb, sq) == 1ULL){
+            black_pieces_eval += floor(((MAX_PHASE - cur_phase) * (*psts)[KING][63 - sq] \
+            + (cur_phase) * (*endgame_psts)[KING][63 - sq]) / MAX_PHASE);
         }
     }
 
-    int white_king_sq = __builtin_ctzll(global_position.board_pieces.pieces[5].bb);
-    int black_king_sq = __builtin_ctzll(global_position.board_pieces.pieces[11].bb);
+    int white_king_sq = __builtin_ctzll(global_position.board_pieces.pieces[WHITE_KING].bb);
+    int black_king_sq = __builtin_ctzll(global_position.board_pieces.pieces[BLACK_KING].bb);
     int row_col_difference = fabs(floor(white_king_sq / 8) - floor(black_king_sq / 8)) \
                                 + abs((white_king_sq % 8) - (black_king_sq % 8));
 
@@ -219,25 +225,25 @@ void order_moves(MoveList* all_moves){
         }
         int16_t move_score_guess = starting_guess;
         
-        if (type == 1){
-            move_score_guess = (10 * piece_weights[global_position.board[to] % 6] / 100) \
-                                - piece_weights[global_position.board[from] % 6] / 100; 
-        } else if (type == 2) {
-            move_score_guess = 9 * (PAWN_WEIGHT / 100);
-        } else if (type == 4){
+        if (type == CAPTURE_FLAG){
+            move_score_guess = (10 * piece_weights[global_position.board[to] % 6] / 10) \
+                                - piece_weights[global_position.board[from] % 6] / 10; 
+        } else if (type == ENPASSANT_FLAG) {
+            move_score_guess = 9 * (PAWN_WEIGHT / 10);
+        } else if (type == PROMOTION_FLAG){
             int promote_val;
             switch (promote_to) {
-                case 1:
-                    promote_val = ROOK_WEIGHT / 100;
+                case ROOK_PROMOTE:
+                    promote_val = ROOK_WEIGHT / 10;
                     break;
-                case 2:
-                    promote_val = KNIGHT_WEIGHT / 100;
+                case KNIGHT_PROMOTE:
+                    promote_val = KNIGHT_WEIGHT / 10;
                     break;
-                case 3:
-                    promote_val = BISHOP_WEIGHT / 100;
+                case BISHOP_PROMOTE:
+                    promote_val = BISHOP_WEIGHT / 10;
                     break;
-                case 4:
-                    promote_val = QUEEN_WEIGHT / 100;
+                case QUEEN_PROMOTE:
+                    promote_val = QUEEN_WEIGHT / 10;
                     break;
             }
 
@@ -254,12 +260,12 @@ TTEntry* probe_tt(uint64_t hash, int depth, int alpha, int beta) {
     TTEntry* entry = &transposition_table[TT_INDEX(hash)];
     if (entry->key == hash && entry->depth <= depth) {
         switch (entry->flag) {
-            case 1:
+            case EXACT:
                 return entry;  
-            case 2:
+            case LOWER_BOUND:
                 if (entry->eval >= beta) return entry; 
                 break;
-            case 3:
+            case UPPER_BOUND:
                 if (entry->eval <= alpha) return entry; 
                 break;
         }
@@ -269,11 +275,11 @@ TTEntry* probe_tt(uint64_t hash, int depth, int alpha, int beta) {
 }
 
 void store_tt(uint64_t hash, int depth, int eval, int alpha, int beta) {
-    int flag = 1;
+    int flag = EXACT;
     if (eval >= beta) {
-        flag = 2;
+        flag = LOWER_BOUND;
     } else if (eval <= alpha) {
-        flag = 3;
+        flag = UPPER_BOUND;
     }
 
     TTEntry* entry = &transposition_table[TT_INDEX(hash)];
@@ -303,12 +309,12 @@ int search_all_threats(int cur_depth, int alpha, int beta){
     int move_count = all_moves->count;
 
     int game_over = is_game_over();
-    if (game_over != 0){
+    if (game_over != GAME_NOT_OVER){
         int score;
-        if (game_over == 1){
+        if (game_over == DRAW){
             score = 0;
         } else {
-            score = maximizing_player ? -100000 + cur_depth : 100000 - cur_depth;
+            score = maximizing_player ? MIN_ALPHA + cur_depth : MAX_BETA - cur_depth;
         }
         free(all_moves);
         return score;
@@ -318,7 +324,8 @@ int search_all_threats(int cur_depth, int alpha, int beta){
         int cur_type = MOVE_FLAGS(all_moves->moves[i]);
         make_board_move(all_moves->moves[i]);
 
-        if (cur_type == 1 || cur_type == 2 || cur_type == 4 || is_king_attacked(global_position.white_turn)){
+        if (cur_type == CAPTURE_FLAG || cur_type == ENPASSANT_FLAG || cur_type == PROMOTION_FLAG 
+            || is_king_attacked(global_position.white_turn)){
             TTEntry *entry = probe_tt(global_position.hash, cur_depth, alpha, beta);
             int eval;
 
@@ -361,12 +368,12 @@ int get_move_eval(int depth, int alpha, int beta){
     int move_count = all_moves->count;
 
     int game_over = is_game_over();
-    if (game_over != 0){
+    if (game_over != GAME_NOT_OVER){
         int score;
-        if (game_over == 1){
+        if (game_over == DRAW){
             score = 0;
         } else {
-            score = maximizing_player ? -100000 - depth : 100000 + depth;
+            score = maximizing_player ? MIN_ALPHA - depth : MAX_BETA + depth;
         }
         free(all_moves);
         return score;
@@ -414,8 +421,8 @@ Move get_best_move(int depth){
     int move_count = all_moves->count;
 
     bool maximizing_player = global_position.white_turn;
-    int alpha = -100000;
-    int beta = 100000;
+    int alpha = MIN_ALPHA;
+    int beta = MAX_BETA;
 
     for (int i = 0; i < move_count; i++){
         make_board_move(all_moves->moves[i]);

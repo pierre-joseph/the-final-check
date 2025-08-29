@@ -7,11 +7,13 @@ Move get_random_move();
 int num_of_positions(int depth);
 int move_generation_test(int depth, char* fen, bool white_turn, char* can_castle_str, int can_en_passant);
 
+enum { EXACT = 1, LOWER_BOUND = 2, UPPER_BOUND = 3 };
+
 typedef struct {
     uint64_t key;
     int depth;
     int eval;
-    int flag; // type of bound (1 = EXACT, 2 = LOWERBOUND, 3 = UPPERBOUND)
+    int flag; // type of bound 
 } TTEntry;
 
 extern TTEntry transposition_table[1 << 20];

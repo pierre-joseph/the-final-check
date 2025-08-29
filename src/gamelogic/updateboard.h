@@ -15,6 +15,8 @@ extern uint64_t zobrist_castling[4];
 extern uint64_t zobrist_enpassant[8];
 extern uint64_t zobrist_white_to_move; 
 
+enum { GAME_NOT_OVER = 0, DRAW = 1, WHITE_WIN = 2, BLACK_WIN = 3 };
+
 typedef struct {
     char type;
     Bitboard bb;
@@ -31,7 +33,10 @@ typedef uint32_t Move;  // A move is a 32-bit packed value
 // bits  6–11:  to square
 // bits 12–14:  promotion piece (0 = none, 1 = R, 2 = N, 3 = B, 4 = Q)
 // bits 15–17:  flags (none(0), capture(1), en passant(2), castling(3), promotion(4), double pawn push (5))
-// bits 18-25:  predicted move score
+// bits 18-32:  predicted move score
+
+enum { NO_PROMOTE = 0, ROOK_PROMOTE = 1, KNIGHT_PROMOTE = 2, BISHOP_PROMOTE = 3, QUEEN_PROMOTE = 4};
+enum { NO_FLAG = 0, CAPTURE_FLAG = 1, ENPASSANT_FLAG = 2, CASTLING_FLAG = 3, PROMOTION_FLAG = 4, DOUBLE_PUSH = 5};
 
 #define MOVE_FROM(m)        ((m) & 0x3F)  
 #define MOVE_TO(m)          (((m) >> 6) & 0x3F)

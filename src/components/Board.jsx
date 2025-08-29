@@ -26,19 +26,20 @@ export default function Board(props) {
     boardPossibleMoves: null,
     getPossibleMoves: null,
     flipBoard: false,
+    result: 0,
+    gamehasEnded: false,
+    pendingMove: null,
+    startGameFunc: null,
     kingAttackedFunc: null,
     gameOverFunc: null,
-    result: 0,
-    pendingMove: null,
+    moveNotationFunc: null,
+    moveList: [],
     gameType: null,
-    startGameFunc: null,
     aiIsWhite: null,
     AIFuncRandom: null,
     AIFuncBest: null,
     makingAIMove: false,
-    moveNotationFunc: null,
-    moveList: [],
-    isDesktop: window.innerWidth >= 1024
+    isDesktop: window.innerWidth >= 1024,
   });
 
   useEffect(() => {
@@ -218,6 +219,18 @@ export default function Board(props) {
     }));
   }
 
+  async function endGame() {
+    await sleep(500);
+    setState((prevState) => ({
+      ...prevState,
+      gamehasEnded: true
+    }));
+  }
+
+  if (state.result != 0 && !state.gamehasEnded) {
+    endGame();
+  }
+
   function changeAppearingPosition(moveShift) {
     if (
       (moveShift == -1 && state.moveIdx > 0) ||
@@ -248,7 +261,7 @@ export default function Board(props) {
     }));
   }
 
-  if (state.result != 0 && state.moveIdx != state.fenList.length - 1) {
+  if (state.gamehasEnded && state.moveIdx != state.fenList.length - 1) {
     rewatchGame();
   }
 
@@ -272,7 +285,8 @@ export default function Board(props) {
         }
         isKingAttacked={state.kingAttackedFunc}
         flipped={state.flipBoard}
-        result={state.result}
+        isCurMove={state.moveIdx == state.fenList.length - 1}
+        gameEnded={state.result != 0}
       />
     ))
   );
@@ -333,7 +347,7 @@ export default function Board(props) {
         />
       )} 
 
-      {state.result != 0 && state.moveIdx == state.fenList.length - 1 && (
+      {state.gamehasEnded && state.moveIdx == state.fenList.length - 1 && (
         <GameOver
           winner={state.result}
           restart={props.restart}
@@ -353,20 +367,20 @@ export default function Board(props) {
       )}
 
       {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
-        state.result == 0 && <MovePanel moveList={state.moveList} />}
+        !state.gamehasEnded && <MovePanel moveList={state.moveList} />}
 
       {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
-        state.result == 0 && (
+        !state.gamehasEnded && (
           <ReplayPanel
             onClick={(moveShift) => changeAppearingPosition(moveShift)}
           />
         )}
 
       {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
-        state.result == 0 && <TurnDisplay isWhite={state.isWhite} />}
+        !state.gamehasEnded && <TurnDisplay isWhite={state.isWhite} />}
 
       {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
-        state.result == 0 && (
+        !state.gamehasEnded && (
           <FlipBoard
             flip={() =>
               setState((prevState) => {

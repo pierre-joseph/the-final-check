@@ -95,6 +95,21 @@ header > img {
   top: 55px;
 }
 
+.mateLabel {
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 50px;
+  top: 4px;
+  border-radius: 50%;
+
+  color: #E63946;
+  font-family: Inter;
+  font-weight: 500;
+  font-size: 16px;
+  text-align: center;
+}
+
 /* Message styling */
 .winningMessage, .startGame, .chooseColor {
   font-family: Inter;

@@ -14,18 +14,18 @@ void get_pawn_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
     if (cur_piece.type == 'P'){
         if (row == 1 && GET_BIT(my_pieces, sq + 8) == 0x0ULL && GET_BIT(opp_pieces, sq + 8) == 0x0ULL
             && GET_BIT(my_pieces, sq + 16) == 0x0ULL && GET_BIT(opp_pieces, sq + 16) == 0x0ULL) {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 16, 0, 5, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 16, NO_PROMOTE, DOUBLE_PUSH, 0);
                 movelist->count++;
             }
 
         if (GET_BIT(my_pieces, sq + 8) == 0x0ULL && GET_BIT(opp_pieces, sq + 8) == 0x0ULL) {
             if (row == 6){
                 for (int i = 0; i < 4; i++){
-                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq + 8, i + 1, 4, 0);
+                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq + 8, i + 1, PROMOTION_FLAG, 0);
                 }
                 movelist->count += 4;
             } else {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 8, 0, 0, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 8, NO_PROMOTE, NO_FLAG, 0);
                 movelist->count++;
             }
         }
@@ -33,48 +33,48 @@ void get_pawn_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
         if (col < 7 && GET_BIT(opp_pieces, sq + 9) == 0x1ULL) {
             if (row == 6){
                 for (int i = 0; i < 4; i++){
-                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq + 9, i + 1, 4, 0);
+                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq + 9, i + 1, PROMOTION_FLAG, 0);
                 }
                 movelist->count += 4;
             } else {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 9, 0, 1, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 9, NO_PROMOTE, CAPTURE_FLAG, 0);
                 movelist->count++;
             }
         } else if (col < 7 && can_enpassant > 0 && sq + 9 == can_enpassant){
-            movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 9, 0, 2, 0);
+            movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 9, NO_PROMOTE, ENPASSANT_FLAG, 0);
             movelist->count++;
         }
 
         if (col > 0 && GET_BIT(opp_pieces, sq + 7) == 0x1ULL) {
             if (row == 6){
                 for (int i = 0; i < 4; i++){
-                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq + 7, i + 1, 4, 0);
+                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq + 7, i + 1, PROMOTION_FLAG, 0);
                 }
                 movelist->count += 4;
             } else {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 7, 0, 1, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 7, NO_PROMOTE, CAPTURE_FLAG, 0);
                 movelist->count++;
             }
         } else if (col > 0 && can_enpassant > 0 && sq + 7 == can_enpassant){
-            movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 7, 0, 2, 0);
+            movelist->moves[movelist->count] = MAKE_MOVE(sq, sq + 7, NO_PROMOTE, ENPASSANT_FLAG, 0);
             movelist->count++;
         }
 
     } else {
         if (row == 6 && GET_BIT(my_pieces, sq - 8) == 0x0ULL && GET_BIT(opp_pieces, sq - 8) == 0x0ULL
             && GET_BIT(my_pieces, sq - 16) == 0x0ULL && GET_BIT(opp_pieces, sq - 16) == 0x0ULL) {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 16, 0, 5, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 16, NO_FLAG, DOUBLE_PUSH, 0);
                 movelist->count++;
             }
 
         if (GET_BIT(my_pieces, sq - 8) == 0x0ULL && GET_BIT(opp_pieces, sq - 8) == 0x0ULL) {
             if (row == 1){
                 for (int i = 0; i < 4; i++){
-                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq - 8, i + 1, 4, 0);
+                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq - 8, i + 1, PROMOTION_FLAG, 0);
                 }
                 movelist->count += 4;
             } else {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 8, 0, 0, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 8, NO_PROMOTE, NO_FLAG, 0);
                 movelist->count++;
             }
         }
@@ -82,30 +82,30 @@ void get_pawn_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
         if (col < 7 && GET_BIT(opp_pieces, sq - 7) == 0x1ULL) {
             if (row == 1){
                 for (int i = 0; i < 4; i++){
-                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq - 7, i + 1, 4, 0);
+                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq - 7, i + 1, PROMOTION_FLAG, 0);
                 }
                 movelist->count += 4;
             } else {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 7, 0, 1, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 7, NO_PROMOTE, CAPTURE_FLAG, 0);
                 movelist->count++;
             }
         } else if (col < 7 && can_enpassant > 0 && sq - 7 == can_enpassant){
-            movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 7, 0, 2, 0);
+            movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 7, NO_PROMOTE, ENPASSANT_FLAG, 0);
             movelist->count++;
         }
 
         if (col > 0 && GET_BIT(opp_pieces, sq - 9) == 0x1ULL) {
             if (row == 1){
                 for (int i = 0; i < 4; i++){
-                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq - 9, i + 1, 4, 0);
+                    movelist->moves[movelist->count + i] = MAKE_MOVE(sq, sq - 9, i + 1, PROMOTION_FLAG, 0);
                 }
                 movelist->count += 4;
             } else {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 9, 0, 1, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 9, NO_PROMOTE, CAPTURE_FLAG, 0);
                 movelist->count++;
             }
         } else if (col > 0 && can_enpassant > 0 && sq - 9 == can_enpassant){
-            movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 9, 0, 2, 0);
+            movelist->moves[movelist->count] = MAKE_MOVE(sq, sq - 9, NO_PROMOTE, ENPASSANT_FLAG, 0);
             movelist->count++;
         }
     }
@@ -128,10 +128,10 @@ void get_knight_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, 
           curCol != col
         ) {
             if (GET_BIT(opp_pieces, to) == 0x1ULL) {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, 0, 1, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, NO_PROMOTE, CAPTURE_FLAG, 0);
                 movelist->count++;
             } else {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, 0, 0, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, NO_PROMOTE, NO_FLAG, 0);
                 movelist->count++;
             }
         }
@@ -151,10 +151,10 @@ void get_bishop_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, 
             if (curRow < 0 || curCol < 0 || curRow > 7 || curCol > 7) {
                 break;
             } else if (GET_BIT(my_pieces, to) == 0x0ULL && GET_BIT(opp_pieces, to) == 0x0ULL) {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, 0, 0, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, NO_PROMOTE, NO_FLAG, 0);
                 movelist->count++;
             } else if (GET_BIT(opp_pieces, to) == 0x1ULL) {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, 0, 1, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, NO_PROMOTE, CAPTURE_FLAG, 0);
                 movelist->count++;
                 break;
             } else {
@@ -176,10 +176,10 @@ void get_rook_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
             if (curRow < 0 || curCol < 0 || curRow > 7 || curCol > 7) {
                 break;
             } else if (GET_BIT(my_pieces, to) == 0x0ULL && GET_BIT(opp_pieces, to) == 0x0ULL) {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, 0, 0, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, NO_PROMOTE, NO_FLAG, 0);
                 movelist->count++;
             } else if (GET_BIT(opp_pieces, to) == 0x1ULL) {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, 0, 1, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, NO_PROMOTE, CAPTURE_FLAG, 0);
                 movelist->count++;
                 break;
             } else {
@@ -209,10 +209,10 @@ void get_king_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
           (curRow != row || curCol != col)
         ) {
           if (GET_BIT(opp_pieces, to) == 0x1ULL) {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, 0, 1, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, NO_PROMOTE, CAPTURE_FLAG, 0);
                 movelist->count++;
             } else {
-                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, 0, 0, 0);
+                movelist->moves[movelist->count] = MAKE_MOVE(sq, to, NO_PROMOTE, NO_FLAG, 0);
                 movelist->count++;
             }
         }
@@ -225,9 +225,9 @@ void get_king_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
         (GET_BIT(my_pieces, 1) == 0x0ULL && GET_BIT(opp_pieces, 1) == 0x0ULL) &&
         (GET_BIT(my_pieces, 2) == 0x0ULL && GET_BIT(opp_pieces, 2) == 0x0ULL) &&
         !is_square_attacked(3, false) &&
-        is_move_legal(MAKE_MOVE(sq, 2, 0, 0, 0), true)
+        is_move_legal(MAKE_MOVE(sq, 2, NO_PROMOTE, NO_FLAG, 0), true)
         ) {
-            movelist->moves[movelist->count] = MAKE_MOVE(sq, 1, 0, 3, 0);
+            movelist->moves[movelist->count] = MAKE_MOVE(sq, 1, NO_PROMOTE, CASTLING_FLAG, 0);
             movelist->count++;
         }
 
@@ -237,10 +237,10 @@ void get_king_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
         (GET_BIT(my_pieces, 5) == 0x0ULL && GET_BIT(opp_pieces, 5) == 0x0ULL) && 
         (GET_BIT(my_pieces, 6) == 0x0ULL && GET_BIT(opp_pieces, 6) == 0x0ULL) && 
         !is_square_attacked(3, false) &&
-        is_move_legal(MAKE_MOVE(sq, 4, 0, 0, 0), true) &&
-        is_move_legal(MAKE_MOVE(sq, 5, 0, 0, 0), true)
+        is_move_legal(MAKE_MOVE(sq, 4, NO_PROMOTE, NO_FLAG, 0), true) &&
+        is_move_legal(MAKE_MOVE(sq, 5, NO_PROMOTE, NO_FLAG, 0), true)
         ) {
-            movelist->moves[movelist->count] = MAKE_MOVE(sq, 5, 0, 3, 0);
+            movelist->moves[movelist->count] = MAKE_MOVE(sq, 5, NO_PROMOTE, CASTLING_FLAG, 0);
             movelist->count++;
         }
     } else {
@@ -249,9 +249,9 @@ void get_king_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
         (GET_BIT(my_pieces, 57) == 0x0ULL && GET_BIT(opp_pieces, 57) == 0x0ULL) &&
         (GET_BIT(my_pieces, 58) == 0x0ULL && GET_BIT(opp_pieces, 58) == 0x0ULL) &&
         !is_square_attacked(59, true) &&
-        is_move_legal(MAKE_MOVE(sq, 58, 0, 0, 0), false)
+        is_move_legal(MAKE_MOVE(sq, 58, NO_PROMOTE, NO_FLAG, 0), false)
         ) {
-            movelist->moves[movelist->count] = MAKE_MOVE(sq, 57, 0, 3, 0);
+            movelist->moves[movelist->count] = MAKE_MOVE(sq, 57, NO_PROMOTE, CASTLING_FLAG, 0);
             movelist->count++;
         }
 
@@ -261,10 +261,10 @@ void get_king_moves(Piece cur_piece, Bitboard my_pieces, Bitboard opp_pieces, in
         (GET_BIT(my_pieces, 61) == 0x0ULL && GET_BIT(opp_pieces, 61) == 0x0ULL) && 
         (GET_BIT(my_pieces, 62) == 0x0ULL && GET_BIT(opp_pieces, 62) == 0x0ULL) && 
         !is_square_attacked(59, true) &&
-        is_move_legal(MAKE_MOVE(sq, 60, 0, 0, 0), false) &&
-        is_move_legal(MAKE_MOVE(sq, 61, 0, 0, 0), false)
+        is_move_legal(MAKE_MOVE(sq, 60, NO_PROMOTE, NO_FLAG, 0), false) &&
+        is_move_legal(MAKE_MOVE(sq, 61, NO_PROMOTE, NO_FLAG, 0), false)
         ) {
-            movelist->moves[movelist->count] = MAKE_MOVE(sq, 61, 0, 3, 0);
+            movelist->moves[movelist->count] = MAKE_MOVE(sq, 61, NO_PROMOTE, CASTLING_FLAG, 0);
             movelist->count++;
         }
     }
@@ -308,7 +308,7 @@ void make_move_helper(Move move){
         pos_stack[stack_top].moving_piece = (char) idx; 
         CLEAR_BIT(*cur_bb, from);
         global_position.hash ^= zobrist_table[global_position.board[from]][from];
-        if (type != 4){
+        if (type != PROMOTION_FLAG){
             SET_BIT(*cur_bb, to);
         }
     }
@@ -326,60 +326,60 @@ void make_move_helper(Move move){
     global_position.board[to] = global_position.board[from];
     global_position.board[from] = -1;
 
-    if (type == 2){
+    if (type == ENPASSANT_FLAG){
         if (to < 32){
-            CLEAR_BIT(global_position.board_pieces.pieces[0].bb, to + 8); 
+            CLEAR_BIT(global_position.board_pieces.pieces[WHITE_PAWN].bb, to + 8); 
             global_position.board[to + 8] = -1;
-            global_position.hash ^= zobrist_table[0][to + 8];
+            global_position.hash ^= zobrist_table[WHITE_PAWN][to + 8];
         } else {
-            CLEAR_BIT(global_position.board_pieces.pieces[6].bb, to - 8); 
+            CLEAR_BIT(global_position.board_pieces.pieces[BLACK_PAWN].bb, to - 8); 
             global_position.board[to - 8] = -1;
-            global_position.hash ^= zobrist_table[6][to - 8];
+            global_position.hash ^= zobrist_table[BLACK_PAWN][to - 8];
         }
-    } else if (type == 3){
+    } else if (type == CASTLING_FLAG){
         if (from == 3){
             if (from > to){
-                CLEAR_BIT(global_position.board_pieces.pieces[1].bb, 0); 
-                SET_BIT(global_position.board_pieces.pieces[1].bb, 2);   
+                CLEAR_BIT(global_position.board_pieces.pieces[WHITE_ROOK].bb, 0); 
+                SET_BIT(global_position.board_pieces.pieces[WHITE_ROOK].bb, 2);   
                 global_position.board[0] = -1;
                 global_position.board[2] = 1;
-                global_position.hash ^= zobrist_table[1][0];
-                global_position.hash ^= zobrist_table[1][2];
+                global_position.hash ^= zobrist_table[WHITE_ROOK][0];
+                global_position.hash ^= zobrist_table[WHITE_ROOK][2];
             } else {
-                CLEAR_BIT(global_position.board_pieces.pieces[1].bb, 7); 
-                SET_BIT(global_position.board_pieces.pieces[1].bb, 4);
+                CLEAR_BIT(global_position.board_pieces.pieces[WHITE_ROOK].bb, 7); 
+                SET_BIT(global_position.board_pieces.pieces[WHITE_ROOK].bb, 4);
                 global_position.board[7] = -1;
                 global_position.board[4] = 1;
-                global_position.hash ^= zobrist_table[1][7];
-                global_position.hash ^= zobrist_table[1][4];
+                global_position.hash ^= zobrist_table[WHITE_ROOK][7];
+                global_position.hash ^= zobrist_table[WHITE_ROOK][4];
             }
         } else {
             if (from > to){
-                CLEAR_BIT(global_position.board_pieces.pieces[7].bb, 56); 
-                SET_BIT(global_position.board_pieces.pieces[7].bb, 58);   
+                CLEAR_BIT(global_position.board_pieces.pieces[BLACK_ROOK].bb, 56); 
+                SET_BIT(global_position.board_pieces.pieces[BLACK_ROOK].bb, 58);   
                 global_position.board[56] = -1;
                 global_position.board[58] = 7;
-                global_position.hash ^= zobrist_table[7][56];
-                global_position.hash ^= zobrist_table[7][58];
+                global_position.hash ^= zobrist_table[BLACK_ROOK][56];
+                global_position.hash ^= zobrist_table[BLACK_ROOK][58];
             } else {
-                CLEAR_BIT(global_position.board_pieces.pieces[7].bb, 63); 
-                SET_BIT(global_position.board_pieces.pieces[7].bb, 60);
+                CLEAR_BIT(global_position.board_pieces.pieces[BLACK_ROOK].bb, 63); 
+                SET_BIT(global_position.board_pieces.pieces[BLACK_ROOK].bb, 60);
                 global_position.board[63] = -1;
                 global_position.board[60] = 7;
-                global_position.hash ^= zobrist_table[7][63];
-                global_position.hash ^= zobrist_table[7][60];
+                global_position.hash ^= zobrist_table[BLACK_ROOK][63];
+                global_position.hash ^= zobrist_table[BLACK_ROOK][60];
             }
         }
-    } else if (type == 4){
+    } else if (type == PROMOTION_FLAG){
         if (to > 31){
             SET_BIT(global_position.board_pieces.pieces[promote].bb, to);
             global_position.board[to] = promote;
-            global_position.hash ^= zobrist_table[0][to];
+            global_position.hash ^= zobrist_table[WHITE_PAWN][to];
             global_position.hash ^= zobrist_table[promote][to];
         } else {
             SET_BIT(global_position.board_pieces.pieces[promote + 6].bb, to);
             global_position.board[to] = promote + 6;
-            global_position.hash ^= zobrist_table[6][to];
+            global_position.hash ^= zobrist_table[BLACK_PAWN][to];
             global_position.hash ^= zobrist_table[promote + 6][to];
         }
     }
@@ -397,7 +397,7 @@ void unmake_move_helper(Move move){
         uint64_t* cur_bb = &global_position.board_pieces.pieces[idx].bb;
         pos_stack[stack_top].moving_piece = (char) idx; 
         CLEAR_BIT(*cur_bb, to); 
-        if (type != 4){
+        if (type != PROMOTION_FLAG){
             SET_BIT(*cur_bb, from);
         }
     }
@@ -413,47 +413,47 @@ void unmake_move_helper(Move move){
         global_position.board[to] = idx;
     }
 
-    if (type == 2){
+    if (type == ENPASSANT_FLAG){
         if (to < 32){
-            SET_BIT(global_position.board_pieces.pieces[0].bb, to + 8); 
-            global_position.board[to + 8] = 0;
+            SET_BIT(global_position.board_pieces.pieces[WHITE_PAWN].bb, to + 8); 
+            global_position.board[to + 8] = WHITE_PAWN;
         } else {
-            SET_BIT(global_position.board_pieces.pieces[6].bb, to - 8); 
-            global_position.board[to - 8] = 6;
+            SET_BIT(global_position.board_pieces.pieces[BLACK_PAWN].bb, to - 8); 
+            global_position.board[to - 8] = BLACK_PAWN;
         }
-    } else if (type == 3) {
+    } else if (type == CASTLING_FLAG) {
         if (from == 3){
             if (from > to){
-                CLEAR_BIT(global_position.board_pieces.pieces[1].bb, 2); 
-                SET_BIT(global_position.board_pieces.pieces[1].bb, 0);   
+                CLEAR_BIT(global_position.board_pieces.pieces[WHITE_ROOK].bb, 2); 
+                SET_BIT(global_position.board_pieces.pieces[WHITE_ROOK].bb, 0);   
                 global_position.board[2] = -1;
-                global_position.board[0] = 1;
+                global_position.board[0] = WHITE_ROOK;
             } else {
-                CLEAR_BIT(global_position.board_pieces.pieces[1].bb, 4); 
-                SET_BIT(global_position.board_pieces.pieces[1].bb, 7);
+                CLEAR_BIT(global_position.board_pieces.pieces[WHITE_ROOK].bb, 4); 
+                SET_BIT(global_position.board_pieces.pieces[WHITE_ROOK].bb, 7);
                 global_position.board[4] = -1;
-                global_position.board[7] = 1;
+                global_position.board[7] = WHITE_ROOK;
             }
         } else {
             if (from > to){
-                CLEAR_BIT(global_position.board_pieces.pieces[7].bb, 58); 
-                SET_BIT(global_position.board_pieces.pieces[7].bb, 56); 
+                CLEAR_BIT(global_position.board_pieces.pieces[BLACK_ROOK].bb, 58); 
+                SET_BIT(global_position.board_pieces.pieces[BLACK_ROOK].bb, 56); 
                 global_position.board[58] = -1;
-                global_position.board[56] = 7;  
+                global_position.board[56] = BLACK_ROOK;  
             } else {
-                CLEAR_BIT(global_position.board_pieces.pieces[7].bb, 60); 
-                SET_BIT(global_position.board_pieces.pieces[7].bb, 63);
+                CLEAR_BIT(global_position.board_pieces.pieces[BLACK_ROOK].bb, 60); 
+                SET_BIT(global_position.board_pieces.pieces[BLACK_ROOK].bb, 63);
                 global_position.board[60] = -1;
-                global_position.board[63] = 7;
+                global_position.board[63] = BLACK_ROOK;
             }
         }
-    } else if (type == 4) {
+    } else if (type == PROMOTION_FLAG) {
         if (from < 32){
-            SET_BIT(global_position.board_pieces.pieces[6].bb, from);
-            global_position.board[from] = 6;
+            SET_BIT(global_position.board_pieces.pieces[BLACK_PAWN].bb, from);
+            global_position.board[from] = BLACK_PAWN;
         } else {
-            SET_BIT(global_position.board_pieces.pieces[0].bb, from);
-            global_position.board[from] = 0;
+            SET_BIT(global_position.board_pieces.pieces[WHITE_PAWN].bb, from);
+            global_position.board[from] = WHITE_PAWN;
         }
     }
 }

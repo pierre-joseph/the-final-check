@@ -36,23 +36,23 @@ void print_bitboard(Bitboard bb) {
 }
 
 Bitboard get_white_pieces(){
-    return global_position.board_pieces.pieces[0].bb | global_position.board_pieces.pieces[1].bb | 
-           global_position.board_pieces.pieces[2].bb | global_position.board_pieces.pieces[3].bb | 
-           global_position.board_pieces.pieces[4].bb | global_position.board_pieces.pieces[5].bb;
+    return global_position.board_pieces.pieces[WHITE_PAWN].bb | global_position.board_pieces.pieces[WHITE_ROOK].bb | 
+           global_position.board_pieces.pieces[WHITE_KNIGHT].bb | global_position.board_pieces.pieces[WHITE_BISHOP].bb | 
+           global_position.board_pieces.pieces[WHITE_QUEEN].bb | global_position.board_pieces.pieces[WHITE_KING].bb;
 }
 
 Bitboard get_black_pieces(){
-    return global_position.board_pieces.pieces[6].bb | global_position.board_pieces.pieces[7].bb | 
-           global_position.board_pieces.pieces[8].bb | global_position.board_pieces.pieces[9].bb | 
-           global_position.board_pieces.pieces[10].bb | global_position.board_pieces.pieces[11].bb;
+    return global_position.board_pieces.pieces[BLACK_PAWN].bb | global_position.board_pieces.pieces[BLACK_ROOK].bb | 
+           global_position.board_pieces.pieces[BLACK_KNIGHT].bb | global_position.board_pieces.pieces[BLACK_BISHOP].bb | 
+           global_position.board_pieces.pieces[BLACK_QUEEN].bb | global_position.board_pieces.pieces[BLACK_KING].bb;
 }
 
 void can_enpassant(Move move){
     int to =  MOVE_TO(move);
     int type = MOVE_FLAGS(move);
-    if (type == 5 && to < 32){
+    if (type == DOUBLE_PUSH && to < 32){
         global_position.en_passant = to - 8;
-    } else if (type == 5){
+    } else if (type == DOUBLE_PUSH){
         global_position.en_passant = to + 8;
     } else {
         global_position.en_passant = -1;
@@ -136,8 +136,8 @@ void make_board_move(Move move){
     update_zobrist();
 
     if (pos_stack[stack_top - 1].captured_piece != '-' 
-        || pos_stack[stack_top - 1].moving_piece == (char) 0
-        || pos_stack[stack_top - 1].moving_piece == (char) 6){
+        || pos_stack[stack_top - 1].moving_piece == (char) WHITE_PAWN
+        || pos_stack[stack_top - 1].moving_piece == (char) BLACK_PAWN){
         global_position.halfmove_clock = 0;
     } else {
         global_position.halfmove_clock += 1;
@@ -186,7 +186,7 @@ bool inefficient_material(){
         Piece black = global_position.board_pieces.pieces[i + 6];
         int white_bits = count_set_bits(white.bb);
         int black_bits = count_set_bits(black.bb);
-        if (i == 2 || i == 3){
+        if (i == KNIGHT || i == BISHOP){
             white_pieces += white_bits;
             black_pieces += black_bits;
         } else {
@@ -257,14 +257,13 @@ bool is_move_legal(Move cur_move, bool white_turn){
     return not_attacked;
 }
 
-// 0=not over, 1=draw, 2=white, 3=black
 int is_game_over(){
     if (global_position.all_moves.count == 0) {
         if (is_king_attacked(global_position.white_turn)) {
-            int winner = !global_position.white_turn ? 2 : 3;
+            int winner = !global_position.white_turn ? WHITE_WIN : BLACK_WIN;
             return winner;
         } else {
-            return 1;
+            return DRAW;
         }
     }
 
@@ -273,19 +272,19 @@ int is_game_over(){
         if (game_hashes[i] == global_position.hash){
             position_count++;
             if (position_count == 3){
-                return 1; 
+                return DRAW; 
             }
         }
     }
 
     if (global_position.halfmove_clock == 50){
-        return 1; 
+        return DRAW; 
     }
 
     if (inefficient_material()){
-        return 1;
+        return DRAW;
     }
-    return 0; 
+    return GAME_NOT_OVER; 
 }
 
 MoveList* find_possible_board_moves(){

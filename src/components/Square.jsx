@@ -59,7 +59,7 @@ export default function Square(props) {
 
   function getSqBackgroundColor() {
     if (
-      props.result == 0 &&
+      props.isCurMove &&
       props.isKingAttacked &&
       props.value != null &&
       props.value.type == "k" &&
@@ -83,8 +83,11 @@ export default function Square(props) {
   const sqBackgroundColor = getSqBackgroundColor();
   const squareStyles = { backgroundColor: sqBackgroundColor };
 
-  const textBg = lightSquare() ? "#B58863" : "#F0D9B5";
-  const textStyles = {color: textBg}
+  const textColor = lightSquare() ? "#B58863" : "#F0D9B5";
+  const textStyles = { color: textColor }
+  
+  const mateBg = props.value != null && props.value.iswhite ? "#FFFFFF" : "#000000";
+  const mateStyles = {backgroundColor: mateBg}
 
   return (
     <section
@@ -94,10 +97,15 @@ export default function Square(props) {
     >
       {props.value != null && <img className="pieceImg" src={getImage()} />}
       {props.isPossibleMove && <div className="lightCircle"></div>}
+      
       {((!props.flipped && props.col == 0) || (props.flipped && props.col == 7)) 
         && <p className="sqRowLabel" style={textStyles}>{8 - props.row}</p>}
+      
       {((!props.flipped && props.row == 7) || (props.flipped && props.row == 0)) 
-      && <p className="sqColLabel" style={textStyles}>{get_letter_text()}</p>}
+        && <p className="sqColLabel" style={textStyles}>{get_letter_text()}</p>}
+      
+      {props.gameEnded && sqBackgroundColor == "#E63946"
+        && <div className="mateLabel" style={mateStyles}>#</div>}
     </section>
   );
 }
