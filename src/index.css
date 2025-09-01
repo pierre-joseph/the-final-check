@@ -147,6 +147,36 @@ header > img {
   border-color: 1px solid white;
 }
 
+/* restart button styling */
+.restartButton  {
+  position: absolute;
+  left: 78.5%;
+  top: 74%;
+  width: 100px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+}
+
+.restartButton button {
+  all: unset; 
+  align-items: center;
+  justify-content: center;
+  background-color: #B58863;
+  font-family: Inter;
+  border-radius: 5%;
+  font-weight: 400;
+  font-size: 18px;
+  color: white;
+  text-align: center;
+}
+
+.restartButton button:hover {
+  background-color: white;
+  color: #B58863;
+  border-color: 1px solid white;
+}
+
 /* flip button styling */
 .flipElement {
   position: absolute;
@@ -300,4 +330,20 @@ header > img {
 
 .replayButtons > span {
   font-weight: 300;
+}
+
+/* how to play link styling */
+.howToPlay {
+  position: absolute;
+  left: 39%;
+  top: 97%;
+  align-items: center;
+  justify-content: center;
+  font-family: Inter;
+  font-size: 15px;
+}
+
+.howToPlay > a {
+  color: #B58863;
+  text-decoration: none;
 }

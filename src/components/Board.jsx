@@ -10,6 +10,8 @@ import ChooseColor from "./ChooseColor";
 import TurnDisplay from "./TurnDisplay";
 import MovePanel from "./MovePanel";
 import ReplayPanel from "./ReplayPanel";
+import Restart from "./Restart"
+import HowToPlay from "./HowtoPlay";
 
 export default function Board(props) {
   const [state, setState] = useState({
@@ -378,6 +380,13 @@ export default function Board(props) {
 
       {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
         !state.gamehasEnded && <TurnDisplay isWhite={state.isWhite} />}
+      
+      {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
+        !state.gamehasEnded && <Restart restart={props.restart} />}
+      
+      {(state.gameType == "human" || state.aiIsWhite != null) &&
+        <HowToPlay />}
+
 
       {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
         !state.gamehasEnded && (
