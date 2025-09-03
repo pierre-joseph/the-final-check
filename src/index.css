@@ -16,7 +16,7 @@ header {
   align-items: center;
   justify-content: center;
   background-color: #B58863;
-  height: 150px;
+  height: 100px;
   width: 100%;
 }
 
@@ -41,7 +41,7 @@ header > img {
   grid-template-columns: repeat(8, auto);
   background-color: #F0D9B5;
   margin: auto;
-  margin-top: 50px;
+  margin-top: 65px;
   width: 600px;
   height: 600px;
 }
@@ -60,6 +60,15 @@ header > img {
   height: 75px;
   left: 0px;
   top: 0px
+}
+
+.smallPieceImg {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  left: 0px;
+  top: 0px;
+  margin-right: -10px;
 }
 
 .lightCircle {
@@ -151,7 +160,7 @@ header > img {
 .restartButton  {
   position: absolute;
   left: 78.5%;
-  top: 74%;
+  top: 64%;
   width: 100px;
   height: 30px;
   align-items: center;
@@ -181,7 +190,7 @@ header > img {
 .flipElement {
   position: absolute;
   left: 75%;
-  top: 62%;
+  top: 52%;
   display: flex;
   flex-direction: column;
   width: 200px;
@@ -231,7 +240,7 @@ header > img {
 .turnDisplay {
   position: absolute;
   left: 75%;
-  top: 48%;
+  top: 38%;
   display: flex;
   flex-direction: row;
   width: 200px;
@@ -260,7 +269,7 @@ header > img {
 .movePanel {
   position: absolute;
   left: 10%;
-  top: 35%;
+  top: 30%;
   display: flex;
   flex-direction: column;
   width: 200px;
@@ -296,7 +305,7 @@ header > img {
 .replayPanel {
   position: absolute;
   left: 10%;
-  top: 75%;
+  top: 70%;
   display: flex;
   flex-direction: column;
   width: 200px;
@@ -335,8 +344,8 @@ header > img {
 /* how to play link styling */
 .howToPlay {
   position: absolute;
-  left: 39%;
-  top: 97%;
+  left: 7%;
+  top: 88%;
   align-items: center;
   justify-content: center;
   font-family: Inter;
@@ -346,4 +355,32 @@ header > img {
 .howToPlay > a {
   color: #B58863;
   text-decoration: none;
+}
+
+/* playerTags styling */
+.whiteTag, .blackTag {
+  position: absolute;
+  background-color: #B58863;
+  height: 40px;
+  width: 600px;
+  left: 435px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-family: Inter;
+  border-radius: 2%;
+}
+
+.whiteSq, .blackSq {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 20%;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.whiteTag > span, .blackTag > span {
+  margin-right: 10px;
 }

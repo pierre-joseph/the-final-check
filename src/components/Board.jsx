@@ -10,8 +10,9 @@ import ChooseColor from "./ChooseColor";
 import TurnDisplay from "./TurnDisplay";
 import MovePanel from "./MovePanel";
 import ReplayPanel from "./ReplayPanel";
-import Restart from "./Restart"
+import Restart from "./Restart";
 import HowToPlay from "./HowtoPlay";
+import PlayerTags from "./PlayerTag";
 
 export default function Board(props) {
   const [state, setState] = useState({
@@ -19,6 +20,8 @@ export default function Board(props) {
     board: convertFENToBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"),
     fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
     fenList: ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"],
+    moveList: [],
+    capturedPieces: [],
     moveIdx: 0,
     canCastle: "KQkq",
     makeMove: null,
@@ -35,7 +38,6 @@ export default function Board(props) {
     kingAttackedFunc: null,
     gameOverFunc: null,
     moveNotationFunc: null,
-    moveList: [],
     gameType: null,
     aiIsWhite: null,
     AIFuncRandom: null,
@@ -95,7 +97,6 @@ export default function Board(props) {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
 
   useEffect(() => {
     if (
@@ -211,6 +212,10 @@ export default function Board(props) {
       squareSelected: null,
       fen: newfen,
       fenList: [...prevState.fenList, newfen],
+      capturedPieces: [
+        ...prevState.capturedPieces,
+        prevState.board[7 - Math.floor(to / 8)][7 - (to % 8)],
+      ],
       moveIdx: prevState.moveIdx + 1,
       board: convertFENToBoard(newfen),
       isWhite: !prevState.isWhite,
@@ -225,7 +230,7 @@ export default function Board(props) {
     await sleep(500);
     setState((prevState) => ({
       ...prevState,
-      gamehasEnded: true
+      gamehasEnded: true,
     }));
   }
 
@@ -347,7 +352,7 @@ export default function Board(props) {
             })
           }
         />
-      )} 
+      )}
 
       {state.gamehasEnded && state.moveIdx == state.fenList.length - 1 && (
         <GameOver
@@ -368,27 +373,42 @@ export default function Board(props) {
         />
       )}
 
-      {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
+      {state.isDesktop &&
+        (state.gameType == "human" || state.aiIsWhite != null) &&
         !state.gamehasEnded && <MovePanel moveList={state.moveList} />}
 
-      {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
+      {state.isDesktop &&
+        (state.gameType == "human" || state.aiIsWhite != null) &&
         !state.gamehasEnded && (
           <ReplayPanel
             onClick={(moveShift) => changeAppearingPosition(moveShift)}
           />
         )}
 
-      {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
+      {state.isDesktop &&
+        (state.gameType == "human" || state.aiIsWhite != null) &&
         !state.gamehasEnded && <TurnDisplay isWhite={state.isWhite} />}
-      
-      {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
+
+      {state.isDesktop &&
+        (state.gameType == "human" || state.aiIsWhite != null) &&
         !state.gamehasEnded && <Restart restart={props.restart} />}
-      
-      {(state.gameType == "human" || state.aiIsWhite != null) &&
-        <HowToPlay />}
 
+      {state.isDesktop &&
+        (state.gameType == "human" || state.aiIsWhite != null) &&
+        !state.gamehasEnded && (
+          <PlayerTags
+            capturedPieces={state.capturedPieces}
+            flipped={state.flipBoard}
+            board={state.board}
+          />
+        )}
 
-      {state.isDesktop && (state.gameType == "human" || state.aiIsWhite != null) &&
+      {state.isDesktop &&
+        (state.gameType == "human" || state.aiIsWhite != null) &&
+        !state.gamehasEnded && <HowToPlay />}
+
+      {state.isDesktop &&
+        (state.gameType == "human" || state.aiIsWhite != null) &&
         !state.gamehasEnded && (
           <FlipBoard
             flip={() =>

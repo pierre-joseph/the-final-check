@@ -107,7 +107,7 @@ const char* get_move_notation(Move move){
 
     char* abcdefgh = "abcdefgh";
 
-    if (type == CAPTURE_FLAG){
+    if (type == CASTLING_FLAG){
         static_move_notation[0] = 'O';
         static_move_notation[1] = '-';
         static_move_notation[2] = 'O';
