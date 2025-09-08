@@ -294,16 +294,6 @@ void store_tt(uint64_t hash, int depth, int eval, int alpha, int beta) {
 int search_all_threats(int cur_depth, int alpha, int beta){
     searched++;
     bool maximizing_player = global_position.white_turn;
-    int cur_eval = eval_position();
-
-    if (maximizing_player){
-        if (cur_eval > alpha) alpha = cur_eval;
-        if (cur_eval >= beta) return beta;
-    } else {
-        if (cur_eval < beta) beta = cur_eval;
-        if (cur_eval <= alpha) return alpha;
-    }
-
     MoveList* all_moves = find_possible_board_moves();
     order_moves(all_moves);
     int move_count = all_moves->count;
@@ -318,6 +308,16 @@ int search_all_threats(int cur_depth, int alpha, int beta){
         }
         free(all_moves);
         return score;
+    }
+    
+    int cur_eval = eval_position();
+
+    if (maximizing_player){
+        if (cur_eval > alpha) alpha = cur_eval;
+        if (cur_eval >= beta) return beta;
+    } else {
+        if (cur_eval < beta) beta = cur_eval;
+        if (cur_eval <= alpha) return alpha;
     }
 
     for (int i = 0; i < move_count; i++){
