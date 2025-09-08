@@ -192,9 +192,9 @@ int eval_position(){
     int row_col_difference = fabs(floor(white_king_sq / 8) - floor(black_king_sq / 8)) \
                                 + abs((white_king_sq % 8) - (black_king_sq % 8));
 
-    if (white_material > black_material){
+    if (white_material > black_material && cur_phase < 6){
         white_pieces_eval -= floor(1.5 * row_col_difference * cur_phase);
-    } else if (white_material < black_material) {
+    } else if (white_material < black_material && cur_phase < 6) {
         black_pieces_eval -= floor(1.5 * row_col_difference * cur_phase);
     }
 
@@ -309,7 +309,7 @@ int search_all_threats(int cur_depth, int alpha, int beta){
         free(all_moves);
         return score;
     }
-    
+
     int cur_eval = eval_position();
 
     if (maximizing_player){
