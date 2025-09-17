@@ -13,6 +13,8 @@ import ReplayPanel from "./ReplayPanel";
 import Restart from "./Restart";
 import HowToPlay from "./HowtoPlay";
 import PlayerTags from "./PlayerTag";
+import { db } from "../backend/FirebaseInit";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 
 export default function Board(props) {
   const [state, setState] = useState({
@@ -117,6 +119,12 @@ export default function Board(props) {
       makeAIMove();
     }
   }, [state.makingAIMove]);
+
+  useEffect(() => {
+    if (state.result != 0 && !state.gamehasEnded) {
+      endGame();
+    }
+  }, [state.result]);
 
   function toggleBoard(row, col) {
     const curSq = (7 - row) * 8 + (7 - col);
@@ -227,15 +235,12 @@ export default function Board(props) {
   }
 
   async function endGame() {
-    await sleep(500);
+    await sleep(300);
+    await addGameToDB(state.gameType, state.aiIsWhite, state.result, state.moveList);
     setState((prevState) => ({
       ...prevState,
       gamehasEnded: true,
     }));
-  }
-
-  if (state.result != 0 && !state.gamehasEnded) {
-    endGame();
   }
 
   function changeAppearingPosition(moveShift) {
@@ -455,6 +460,13 @@ function convertFENToBoard(fen) {
   }
   board.push(curRank);
   return board;
+}
+
+async function addGameToDB(botGame, botWhite, result, moves) {
+  // Add a document
+  await addDoc(collection(db, "Games"), {
+    botGame: botGame == "bot", botWhite: botWhite, winner: result == 1 ? "draw" : (result == 2 ? "White" : "Black"), moves: moves
+  });
 }
 
 function sleep(ms) {
